@@ -117,10 +117,11 @@ server.listen(4567, async () => {
     await loginTitle.waitFor();
     console.log('Login page loaded');
 
-    // Sign in as Admin Salek Masud Parvez
-    const adminLoginCard = page.locator('.quick-login-card.admin-card');
-    await adminLoginCard.click();
-    await page.waitForTimeout(250);
+    // Sign in as Admin Salek Masud Parvez via production credentials
+    await page.locator('#auth-email').fill('smp23997@gmail.com');
+    await page.locator('#auth-password').fill('admin_parvez@25$J');
+    await page.locator('button[type="submit"]').click();
+    await page.waitForTimeout(300);
 
     // 4. Test Dashboard & Admin RBAC Management Table
     const dashboardTitle = page.getByText(/Platform Dashboard/i);

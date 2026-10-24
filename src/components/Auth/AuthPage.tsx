@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ShieldCheck,
   Shield,
   Lock,
   ArrowRight,
@@ -10,9 +9,8 @@ import {
   EyeOff,
   CheckCircle2,
   Mail,
-  User,
+  User as UserIcon,
   KeyRound,
-  Terminal,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -27,9 +25,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
     login,
     signup,
     loginWithGoogle,
-    loginAsAdmin,
-    loginAsDemoUser,
-    loginAsPendingUser,
   } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -41,7 +36,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [showDevProfiles, setShowDevProfiles] = useState(true);
 
   const navigateTo = (view: 'home' | 'studio' | 'dashboard' | 'login') => {
     if (onNavigate) {
@@ -75,7 +69,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
     try {
       if (mode === 'signup') {
         const u = await signup(nameInput, emailInput, passwordInput);
-        setSuccessMessage(`Account created for ${u.name}! Redirecting to control center...`);
+        setSuccessMessage(`Account created successfully for ${u.name}! Redirecting to control center...`);
         setTimeout(() => {
           navigateTo('dashboard');
         }, 400);
@@ -88,45 +82,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Authentication failed. Please verify your credentials.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleAdminQuickLogin = async () => {
-    setIsSubmitting(true);
-    setErrorMessage('');
-    try {
-      await loginAsAdmin();
-      navigateTo('dashboard');
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Admin authentication failed.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDemoUserQuickLogin = async () => {
-    setIsSubmitting(true);
-    setErrorMessage('');
-    try {
-      await loginAsDemoUser();
-      navigateTo('studio');
-    } catch (err: any) {
-      setErrorMessage(err.message || 'User login failed.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handlePendingUserQuickLogin = async () => {
-    setIsSubmitting(true);
-    setErrorMessage('');
-    try {
-      await loginAsPendingUser();
-      navigateTo('dashboard');
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Pending login failed.');
     } finally {
       setIsSubmitting(false);
     }
@@ -228,7 +183,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
               {mode === 'signup' && (
                 <div className="form-group">
                   <label htmlFor="auth-name">
-                    <User size={13} className="inline-icon" /> Full Name
+                    <UserIcon size={13} className="inline-icon" /> Full Name
                   </label>
                   <input
                     id="auth-name"
@@ -263,9 +218,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
                   <label htmlFor="auth-password">
                     <KeyRound size={13} className="inline-icon" /> Password
                   </label>
-                  {emailInput.toLowerCase() === 'smp23997@gmail.com' && (
-                    <span className="admin-hint-tag">Superadmin Credentials</span>
-                  )}
                 </div>
                 <div className="password-input-wrapper">
                   <input
@@ -324,6 +276,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
                 <ArrowRight size={15} />
               </button>
 
+              <div className="login-divider">
+                <span>OR SIGN IN WITH AUTH0</span>
+              </div>
+
               <button
                 type="button"
                 className="btn btn-secondary btn-block btn-auth0-oauth"
@@ -334,86 +290,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
                 <span>Continue with Google / Auth0 Universal Login</span>
               </button>
             </form>
-
-            {/* Quick Access Card Row (Automated Testing & Fast Admin Access) */}
-            <div className="developer-bypass-section">
-              <button
-                type="button"
-                className="dev-toggle-link"
-                onClick={() => setShowDevProfiles(!showDevProfiles)}
-              >
-                <Terminal size={12} />
-                <span>{showDevProfiles ? 'Hide Developer Quick Profiles' : 'Developer & Test Profiles'}</span>
-              </button>
-
-              <div
-                className="quick-login-grid"
-                style={{ display: showDevProfiles ? 'flex' : 'none' }}
-              >
-                <button
-                  type="button"
-                  className="quick-login-card admin-card"
-                  onClick={handleAdminQuickLogin}
-                  disabled={isSubmitting}
-                >
-                  <div className="quick-card-icon">
-                    <ShieldCheck size={20} className="text-amber" />
-                  </div>
-                  <div className="quick-card-content">
-                    <div className="quick-card-title">
-                      <span>Admin Profile</span>
-                      <span className="role-badge role-admin">ADMIN</span>
-                    </div>
-                    <div className="quick-card-desc">
-                      Salek Masud Parvez (<code>smp23997@gmail.com</code>)
-                    </div>
-                    <span className="quick-card-action">Full access & user approval console →</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="quick-login-card user-card"
-                  onClick={handleDemoUserQuickLogin}
-                  disabled={isSubmitting}
-                >
-                  <div className="quick-card-icon">
-                    <User size={20} className="text-cyan" />
-                  </div>
-                  <div className="quick-card-content">
-                    <div className="quick-card-title">
-                      <span>Permitted User</span>
-                      <span className="status-badge status-approved">APPROVED</span>
-                    </div>
-                    <div className="quick-card-desc">
-                      Alex Developer (<code>developer.alex@gmail.com</code>)
-                    </div>
-                    <span className="quick-card-action">Direct studio access with export →</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="quick-login-card pending-card"
-                  onClick={handlePendingUserQuickLogin}
-                  disabled={isSubmitting}
-                >
-                  <div className="quick-card-icon">
-                    <Lock size={20} className="text-orange" />
-                  </div>
-                  <div className="quick-card-content">
-                    <div className="quick-card-title">
-                      <span>New User</span>
-                      <span className="status-badge status-pending">PENDING</span>
-                    </div>
-                    <div className="quick-card-desc">
-                      Simulate pending user state & access approval workflow
-                    </div>
-                    <span className="quick-card-action">Test gatekeeping →</span>
-                  </div>
-                </button>
-              </div>
-            </div>
           </>
         )}
 
