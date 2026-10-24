@@ -40,6 +40,7 @@ interface AuthContextType {
   loginWithAuth0: () => void;
   loginWithGoogle: () => void;
   requestAccess: (plan?: string, note?: string) => Promise<{ success: boolean; message: string }>;
+  deleteMyAccount: () => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -445,7 +446,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth0Domain, auth0ClientId]);
 
-  // 9. Sign Out
+  // 9. Delete My Account
+  const deleteMyAccount = useCallback(async () => {
+    if (!user?.email) return;
+    const res = await fetch("/api/auth/delete-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email }),
+    });
+
+    if (res.ok) {
+      logout();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Failed to delete account");
+    }
+  }, [user?.email, logout]);
+
+  // 10. Sign Out
   const logout = useCallback(() => {
     if (user?.email) {
       fetch("/api/auth/logout", {
@@ -483,6 +501,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithAuth0,
         loginWithGoogle,
         requestAccess,
+        deleteMyAccount,
         logout,
         refreshUser,
       }}

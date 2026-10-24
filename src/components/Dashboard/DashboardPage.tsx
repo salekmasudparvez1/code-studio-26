@@ -21,6 +21,7 @@ import {
   Send,
   Database,
   Activity,
+  Trash2,
 } from 'lucide-react';
 import { useAuth, User } from '../../context/AuthContext';
 
@@ -36,7 +37,7 @@ interface StatsData {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
-  const { user, isAdmin, isPermitted, logout, refreshUser, requestAccess } = useAuth();
+  const { user, isAdmin, isPermitted, logout, refreshUser, requestAccess, deleteMyAccount } = useAuth();
   const [usersList, setUsersList] = useState<User[]>([]);
   const [stats, setStats] = useState<StatsData>({
     totalUsers: 1,
@@ -117,6 +118,51 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       setActionMessage({ text: err.message || 'Network error occurred', type: 'error' });
     }
     setTimeout(() => setActionMessage(null), 4000);
+  };
+
+  const handleDeleteUser = async (email: string) => {
+    if (!window.confirm(`Are you sure you want to permanently delete user account: ${email}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/users/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        setActionMessage({
+          text: `User ${email} has been permanently deleted from database.`,
+          type: 'success',
+        });
+        await fetchUsersAndStats();
+        if (user?.email?.toLowerCase() === email.toLowerCase()) {
+          logout();
+          onNavigate('home');
+        }
+      } else {
+        const err = await res.json();
+        setActionMessage({ text: err.error || 'Failed to delete user', type: 'error' });
+      }
+    } catch (err: any) {
+      setActionMessage({ text: err.message || 'Network error occurred', type: 'error' });
+    }
+    setTimeout(() => setActionMessage(null), 4000);
+  };
+
+  const handleDeleteMyAccount = async () => {
+    if (!window.confirm("Are you sure you want to permanently delete your account? All your studio records will be wiped.")) {
+      return;
+    }
+    try {
+      await deleteMyAccount();
+      onNavigate('home');
+    } catch (err: any) {
+      setActionMessage({ text: err.message || 'Could not delete account', type: 'error' });
+      setTimeout(() => setActionMessage(null), 4000);
+    }
   };
 
   const handleUpdateRole = async (email: string, newRole: 'USER' | 'ADMIN') => {
@@ -282,6 +328,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                 <span>{user?.email}</span>
                 <span className="dot-divider">•</span>
                 <span className="profile-id-tag">ID: {user?.id}</span>
+                {!isAdmin && (
+                  <>
+                    <span className="dot-divider">•</span>
+                    <button
+                      type="button"
+                      className="btn-self-delete"
+                      onClick={handleDeleteMyAccount}
+                      title="Permanently delete your account"
+                    >
+                      Delete Account
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -697,6 +756,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                                     <span className="you-pill">You</span>
                                   )}
                                 </div>
+                                <button
+                                  type="button"
+                                  className="btn-action-delete"
+                                  disabled={isTargetAdmin}
+                                  onClick={() => handleDeleteUser(u.email)}
+                                  title={isTargetAdmin ? "Root admin cannot be deleted" : "Delete user permanently"}
+                                >
+                                  <Trash2 size={13} />
+                                  <span>Delete</span>
+                                </button>
                               </div>
                             </td>
                             <td>

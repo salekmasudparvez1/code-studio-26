@@ -434,7 +434,62 @@ export async function handleApiRequest(
     };
   }
 
-  // 10. Platform Statistics: GET /api/stats
+  // 10. Admin: Delete User: POST /api/admin/users/delete or DELETE /api/admin/users
+  if ((path === '/api/admin/users/delete' && method === 'POST') || (path === '/api/admin/users' && method === 'DELETE')) {
+    const email = bodyData?.email || queryParams?.email;
+    if (!email) {
+      return { status: 400, data: { error: 'Email parameter is required to delete a user.' } };
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    if (normalizedEmail === 'smp23997@gmail.com' || normalizedEmail === 'sakekmasudparvez@gmail.com') {
+      return { status: 403, data: { error: 'Root administrator account cannot be deleted.' } };
+    }
+
+    const res = await pool.query('DELETE FROM studio_users WHERE LOWER(email) = LOWER($1) RETURNING *;', [
+      normalizedEmail,
+    ]);
+
+    if (res.rows.length === 0) {
+      return { status: 404, data: { error: 'User not found in database.' } };
+    }
+
+    return {
+      status: 200,
+      data: {
+        success: true,
+        message: `Account for ${normalizedEmail} has been permanently deleted.`,
+        deletedUser: res.rows[0],
+      },
+    };
+  }
+
+  // 11. Self Account Deletion: POST /api/auth/delete-account
+  if (path === '/api/auth/delete-account' && method === 'POST') {
+    const { email } = bodyData || {};
+    if (!email) {
+      return { status: 400, data: { error: 'Email is required to delete account.' } };
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    if (normalizedEmail === 'smp23997@gmail.com' || normalizedEmail === 'sakekmasudparvez@gmail.com') {
+      return { status: 403, data: { error: 'Root administrator account cannot be deleted.' } };
+    }
+
+    const res = await pool.query('DELETE FROM studio_users WHERE LOWER(email) = LOWER($1) RETURNING *;', [
+      normalizedEmail,
+    ]);
+
+    return {
+      status: 200,
+      data: {
+        success: true,
+        message: 'Your account has been permanently removed.',
+      },
+    };
+  }
+
+  // 12. Platform Statistics: GET /api/stats
   if (path === '/api/stats' && method === 'GET') {
     const totalUsers = await pool.query('SELECT COUNT(*) as count FROM studio_users;');
     const approvedUsers = await pool.query(
