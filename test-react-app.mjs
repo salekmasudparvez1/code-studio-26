@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { chromium } from 'playwright';
+import { handleApiRequest } from './server/apiHandler.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, 'dist');
@@ -17,17 +18,47 @@ const mimeTypes = {
 
 const server = http.createServer((req, res) => {
   let reqPath = req.url.split('?')[0];
-  if (reqPath === '/') reqPath = '/index.html';
-  const filePath = path.join(distDir, reqPath);
 
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    const ext = path.extname(filePath);
-    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
-    res.end(fs.readFileSync(filePath));
-  } else {
-    res.writeHead(404);
-    res.end('Not found');
+  // API handler
+  if (reqPath.startsWith('/api')) {
+    let body = '';
+    req.on('data', (chunk) => (body += chunk));
+    req.on('end', async () => {
+      try {
+        let bodyData = null;
+        if (body) {
+          try {
+            bodyData = JSON.parse(body);
+          } catch {}
+        }
+        const urlObj = new URL(req.url, 'http://localhost:4567');
+        const queryParams = {};
+        urlObj.searchParams.forEach((val, key) => {
+          queryParams[key] = val;
+        });
+
+        const result = await handleApiRequest(urlObj.pathname, req.method || 'GET', bodyData, queryParams);
+        res.writeHead(result.status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result.data));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
   }
+
+  if (reqPath === '/') reqPath = '/index.html';
+  let filePath = path.join(distDir, reqPath);
+
+  // SPA fallback
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    filePath = path.join(distDir, 'index.html');
+  }
+
+  const ext = path.extname(filePath);
+  res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
+  res.end(fs.readFileSync(filePath));
 });
 
 server.listen(4567, async () => {
@@ -49,21 +80,77 @@ server.listen(4567, async () => {
     await page.goto('http://localhost:4567');
     console.log('Page loaded successfully');
 
-    // 1. Verify Logo image is rendered in header
+    // 1. Verify Informative Landing Page & Creator Info (Salek Masud Parvez)
+    const navLogo = page.locator('img.navbar-logo-img');
+    await navLogo.waitFor();
+    const navLogoSrc = await navLogo.getAttribute('src');
+    console.log('Navbar logo verified:', navLogoSrc);
+
+    // Verify creator details on landing page
+    const creatorName = page.getByText('Salek Masud Parvez').first();
+    await creatorName.waitFor();
+    console.log('Creator name verified on landing page');
+
+    const creatorEmail = page.getByText('sakekmasudparvez@gmail.com').first();
+    await creatorEmail.waitFor();
+    console.log('Creator email verified on landing page');
+
+    const creatorGithub = page.getByText('github.com/salekmasudparvez1').first();
+    await creatorGithub.waitFor();
+    console.log('Creator GitHub verified on landing page');
+
+    // 2. Test Studio Gatekeeper for Unauthenticated User
+    const studioNavBtn = page.locator('.nav-link').filter({ hasText: 'Studio' });
+    await studioNavBtn.click();
+    await page.waitForTimeout(200);
+
+    const restrictedText = page.getByText(/Studio Access Restricted/i);
+    await restrictedText.waitFor();
+    console.log('Studio Gatekeeper verified: access restricted for unauthenticated user');
+
+    // 3. Test Auth0 Login Page & RBAC Sign In
+    const signInBtn = page.getByRole('button', { name: /Sign In with Auth0/i });
+    await signInBtn.click();
+    await page.waitForTimeout(150);
+
+    const loginTitle = page.getByText(/Sign In to CodeStudio 26/i);
+    await loginTitle.waitFor();
+    console.log('Login page loaded');
+
+    // Sign in as Admin Salek Masud Parvez
+    const adminLoginCard = page.locator('.quick-login-card.admin-card');
+    await adminLoginCard.click();
+    await page.waitForTimeout(250);
+
+    // 4. Test Dashboard & Admin RBAC Management Table
+    const dashboardTitle = page.getByText(/Platform Dashboard/i);
+    await dashboardTitle.waitFor();
+    console.log('Dashboard loaded for Admin Salek Masud Parvez');
+
+    const adminConsoleTitle = page.getByText(/Admin RBAC & User Access Console/i);
+    await adminConsoleTitle.waitFor();
+    console.log('Admin RBAC Console verified in Dashboard');
+
+    // 5. Navigate to Studio Workspace as Permitted Admin
+    const launchStudioBtn = page.getByRole('button', { name: /Launch Studio Workspace/i });
+    await launchStudioBtn.click();
+    await page.waitForTimeout(200);
+
+    // Verify Header Logo image inside Studio
     const logoImg = page.locator('img.brand-logo-img');
     await logoImg.waitFor();
     const logoSrc = await logoImg.getAttribute('src');
-    console.log('Header logo image verified:', logoSrc);
+    console.log('Studio header logo image verified:', logoSrc);
     if (!logoSrc || !logoSrc.includes('logo.svg')) {
       throw new Error(`Expected logo.svg, got ${logoSrc}`);
     }
 
-    // 2. Verify Canvas is rendered
+    // Verify Canvas is rendered
     const canvas = page.locator('canvas#stage');
     await canvas.waitFor();
-    console.log('Canvas is present');
+    console.log('Canvas is present in Studio');
 
-    // 3. Verify Cells List contains initial 7 cells with Photoshop layer styling
+    // Verify Cells List contains initial 7 cells with Photoshop layer styling
     const cellItems = page.locator('.cell-item');
     const initialCellCount = await cellItems.count();
     console.log('Initial layer cell count:', initialCellCount);

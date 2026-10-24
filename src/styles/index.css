@@ -1,5 +1,6 @@
 @import './variables.css';
 @import './base.css';
+@import './navbar.css';
 @import './header.css';
 @import './sidebar.css';
 @import './layers.css';
@@ -7,4 +8,7 @@
 @import './canvas.css';
 @import './timeline.css';
 @import './components.css';
-
+@import './landing.css';
+@import './auth.css';
+@import './dashboard.css';
+@import './gatekeeper.css';

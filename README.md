@@ -1,22 +1,67 @@
-# Code Animation Studio · Multi‑Cell Pro (React Edition)
+# CodeStudio 26 · AI & Code Motion Engine
 
-A modern, modular React 19 & TypeScript studio for creating line-by-line coding animations, deep learning architectures, interactive AI/ML visualizations, and Matplotlib figure animations into seamless recorded MP4/WebM videos.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Deployment](https://img.shields.io/badge/Vercel-Live-black.svg)](https://code-animation-26.vercel.app/)
+[![React 19](https://img.shields.io/badge/React-19.3-61dafb.svg)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.0-3178c6.svg)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17.2-336791.svg)](https://www.postgresql.org/)
+[![Auth0](https://img.shields.io/badge/Auth0-RBAC-eb5424.svg)](https://auth0.com/)
+
+A modern, modular React 19 & TypeScript studio for creating cinematic line-by-line coding animations, deep learning architectures (ANN, CNN, RNN, LSTM, YOLO), interactive AI/ML visualizations, and Matplotlib figure animations into frame-accurate recorded MP4 videos.
+
+**Live Production Deployment**: [https://code-animation-26.vercel.app/](https://code-animation-26.vercel.app/)
+
+---
+
+## 👨‍💻 Creator & Principal Architect
+
+- **Name**: **Salek Masud Parvez**
+- **Email**: [sakekmasudparvez@gmail.com](mailto:sakekmasudparvez@gmail.com)
+- **GitHub**: [@salekmasudparvez1](https://github.com/salekmasudparvez1)
+- **Repository**: [https://github.com/salekmasudparvez1/code-studio-26](https://github.com/salekmasudparvez1/code-studio-26)
+
+---
+
+## 🔐 Auth0 RBAC & PostgreSQL Backend
+
+CodeStudio 26 implements enterprise **Role-Based Access Control (RBAC)** powered by PostgreSQL (`studio_users`):
+
+- **ADMIN Role**: Assigned to `sakekmasudparvez@gmail.com` with `APPROVED` permission status. Full access to create animations, plus access to the **Admin RBAC Management Console** in the Dashboard to approve/reject user studio permissions and toggle roles.
+- **USER Role**: Permitted developers and educators with approved access to create animations, edit cells, scrub the timeline, and export native MP4 videos.
+- **Studio Gatekeeper**: Any account with `PENDING` or `REJECTED` status is gracefully restricted with a status review screen until approved by Administrator Salek Masud Parvez.
+
+### Database Schema (`studio_users`)
+- `id` (VARCHAR PRIMARY KEY)
+- `email` (VARCHAR UNIQUE NOT NULL)
+- `name` (VARCHAR)
+- `picture` (TEXT)
+- `role` (`'USER'` | `'ADMIN'`)
+- `status` (`'PENDING'` | `'APPROVED'` | `'REJECTED'`)
+- `created_at`, `updated_at`, `last_login_at` (TIMESTAMPTZ)
+
+---
 
 ## 🎨 Photoshop-Inspired Studio & Modular Architecture
 
 - **Photoshop Layers Panel**: Photoshop CC dark-matte layer aesthetics with layer visibility eyes, Adobe-style colored layer thumbnails, signature active layer blue highlight (`#162c4a` with `#0091ff` border), and hover reordering actions.
 - **Header with `logo.svg`**: Integrated official vector brand logo.
 - **Native MP4 Direct Video Export**: Direct 1-click in-browser `.mp4` video export (H.264/AVC1 codec) supported out of the box with zero external conversion needed in Chromium/Chrome/Edge/Safari.
+- **Fullscreen HUD Presentation Mode**: Floating translucent frosted glass control bar with auto-hiding controls on mouse idle, top-right exit pill, and keyboard navigation.
 - **Modular Styles in `src/styles/`**:
   - `variables.css`: Photoshop dark theme tokens and color accents.
   - `base.css`: Base resets, body layout, custom dark scrollbars.
+  - `navbar.css`: Top global navigation bar with user profile & role badge.
   - `header.css`: Studio header with logo.svg branding.
   - `sidebar.css`: Sidebar layout, Photoshop panel headers, quick stats.
   - `layers.css`: Photoshop-inspired layers stack, active state, eye toggle, badges, dropdown.
   - `inspector.css`: Form inputs, selects, sliders, color pickers, sub-inspector panels.
-  - `canvas.css`: 1920x1080 canvas stage preview container.
+  - `canvas.css`: 1920x1080 canvas stage preview container & fullscreen HUD overlay.
   - `timeline.css`: Transport controls, time display pill, scrubber.
   - `components.css`: Button variants, badges, cards, export progress bar.
+  - `landing.css`: Informative frontend hero, features grid, creator bio, and live preview.
+  - `auth.css`: Auth0 login card, error alerts, quick role profiles.
+  - `dashboard.css`: User profile overview, metrics cards, and live user access table.
+  - `gatekeeper.css`: Studio access restriction and pending review screens.
   - `index.css`: Master aggregator.
 
 ---
@@ -59,15 +104,44 @@ A modern, modular React 19 & TypeScript studio for creating line-by-line coding 
 
 ---
 
+## ⌨️ Studio Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| <kbd>Space</kbd> | Play / Pause |
+| <kbd>R</kbd> | Reset timeline to start |
+| <kbd>←</kbd> (Left Arrow) or <kbd>J</kbd> | Step backward **1 second** |
+| <kbd>Shift</kbd> + <kbd>←</kbd> | Step backward **5 seconds** |
+| <kbd>→</kbd> (Right Arrow) or <kbd>L</kbd> | Step forward **1 second** |
+| <kbd>Shift</kbd> + <kbd>→</kbd> | Step forward **5 seconds** |
+| <kbd>,</kbd> / <kbd>.</kbd> | Frame-by-frame backward / forward ($1/30$s) |
+| <kbd>F</kbd> | Toggle Fullscreen mode |
+| <kbd>Esc</kbd> | Exit Fullscreen mode |
+
+---
+
 ## 🛠️ Getting Started
 
 ```bash
+# Clone the repository
+git clone https://github.com/salekmasudparvez1/code-studio-26.git
+cd code-studio-26
+
+# Install dependencies
+pnpm install
+
 # Start Vite development server
 pnpm dev
 
 # Build for production
 pnpm build
 
-# Run automated Playwright tests
+# Run Playwright test suite
 pnpm test
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) - Copyright (c) 2026 Salek Masud Parvez.
