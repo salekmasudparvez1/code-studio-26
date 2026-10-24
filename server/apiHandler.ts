@@ -39,14 +39,25 @@ export async function handleApiRequest(
 
   // 1. Sync / Login User: POST /api/auth/sync
   if (path === '/api/auth/sync' && method === 'POST') {
-    const { id, email, name, picture } = bodyData || {};
+    const { id, email, name, picture, password } = bodyData || {};
     if (!email) {
       return { status: 400, data: { error: 'Email is required' } };
     }
 
     const userId = id || `user_${Date.now()}`;
     const userName = name || email.split('@')[0];
-    const isAdminEmail = email.toLowerCase() === 'sakekmasudparvez@gmail.com';
+    const normalizedEmail = email.toLowerCase().trim();
+    const isAdminEmail =
+      normalizedEmail === 'smp23997@gmail.com' ||
+      normalizedEmail === 'sakekmasudparvez@gmail.com' ||
+      normalizedEmail === (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
+
+    if (isAdminEmail && password) {
+      const expectedPass = process.env.ADMIN_PASSWORD || 'admin_parvez@25$J';
+      if (password !== expectedPass) {
+        return { status: 401, data: { error: 'Invalid admin password' } };
+      }
+    }
 
     // Insert or update user
     const query = `

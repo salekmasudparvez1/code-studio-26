@@ -22,7 +22,7 @@ interface AuthContextType {
   isAdmin: boolean;
   auth0Domain: string;
   auth0ClientId: string;
-  login: (userData: { email: string; name?: string; id?: string; picture?: string }) => Promise<void>;
+  login: (userData: { email: string; name?: string; id?: string; picture?: string; password?: string }) => Promise<void>;
   loginWithAuth0: () => void;
   loginAsAdmin: () => Promise<void>;
   loginAsDemoUser: () => Promise<void>;
@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [auth0Domain, auth0ClientId]);
 
   // Sync user with PostgreSQL backend
-  const syncWithBackend = useCallback(async (data: { email: string; name?: string; id?: string; picture?: string }) => {
+  const syncWithBackend = useCallback(async (data: { email: string; name?: string; id?: string; picture?: string; password?: string }) => {
     try {
       const res = await fetch('/api/auth/sync', {
         method: 'POST',
@@ -84,13 +84,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(json.user));
           return json.user;
         }
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        if (errJson?.error) {
+          throw new Error(errJson.error);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.message && err.message.includes('password')) {
+        throw err;
+      }
       console.warn('Backend sync failed, using client state:', err);
     }
 
     // Fallback if backend is unreachable
-    const isAdmin = data.email.toLowerCase() === 'sakekmasudparvez@gmail.com';
+    const isAdmin =
+      data.email.toLowerCase() === 'smp23997@gmail.com' ||
+      data.email.toLowerCase() === 'sakekmasudparvez@gmail.com';
+
     const fallbackUser: User = {
       id: data.id || `user_${Date.now()}`,
       email: data.email,
@@ -128,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (userData: { email: string; name?: string; id?: string; picture?: string }) => {
+  const login = async (userData: { email: string; name?: string; id?: string; picture?: string; password?: string }) => {
     setIsLoading(true);
     await syncWithBackend(userData);
     setIsLoading(false);
@@ -152,9 +163,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginAsAdmin = async () => {
     await login({
-      email: 'sakekmasudparvez@gmail.com',
-      name: 'Salek Masud Parvez',
-      id: 'auth0|admin_salek',
+      email: 'smp23997@gmail.com',
+      name: 'Salek Masud Parvez (Admin)',
+      id: 'auth0|admin_smp',
+      password: 'admin_parvez@25$J',
     });
   };
 
