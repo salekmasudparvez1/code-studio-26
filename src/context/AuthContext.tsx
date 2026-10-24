@@ -1,7 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 
-export type UserRole = 'USER' | 'ADMIN';
-export type UserStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type UserRole = "USER" | "ADMIN";
+export type UserStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface User {
   id: string;
@@ -22,210 +30,235 @@ interface AuthContextType {
   isAdmin: boolean;
   auth0Domain: string;
   auth0ClientId: string;
-  login: (userData: { email: string; name?: string; id?: string; picture?: string; password?: string }) => Promise<void>;
-  loginWithAuth0: () => void;
-  loginAsAdmin: () => Promise<void>;
-  loginAsDemoUser: () => Promise<void>;
-  loginAsPendingUser: () => Promise<void>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_KEY = 'codestudio_auth_user';
+const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [auth0Domain, setAuth0Domain] = useState<string>(() => {
-    const raw = (import.meta.env.VITE_AUTH0_DOMAIN as string) || '';
-    return raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+const AUTH0_AUDIENCE = import.meta.env.VITE_AUTH0_AUDIENCE || "";
+
+async function requestUser(path: string, body?: object) {
+  const response = await fetch(`${API_URL}/api/auth/${path}`, {
+    method: body ? "POST" : "GET",
+    credentials: "include",
+    headers: body ? { "Content-Type": "application/json" } : {},
+    ...(body ? { body: JSON.stringify(body) } : {}),
   });
 
-  const [auth0ClientId, setAuth0ClientId] = useState<string>(() => {
-    return (import.meta.env.VITE_AUTH0_CLIENT_ID as string) || '';
-  });
+  const data = await response.json().catch(() => ({}));
 
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch {
-      // ignore
-    }
-    return null;
-  });
+  if (!response.ok) {
+    throw new Error(data.error || "Authentication request failed.");
+  }
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  return data.user as User;
+}
 
-  // Fetch Auth0 runtime config from backend if needed
-  useEffect(() => {
-    fetch('/api/auth/config')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((cfg) => {
-        if (cfg?.domain && !auth0Domain) setAuth0Domain(cfg.domain);
-        if (cfg?.clientId && !auth0ClientId) setAuth0ClientId(cfg.clientId);
-      })
-      .catch(() => {});
-  }, [auth0Domain, auth0ClientId]);
+export const AuthProvider: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
+  const {
+    isAuthenticated: auth0Authenticated,
+    isLoading: auth0Loading,
+    user: auth0User,
+    getAccessTokenSilently,
+    loginWithRedirect,
+    logout: auth0Logout,
+  } = useAuth0();
 
-  // Sync user with PostgreSQL backend
-  const syncWithBackend = useCallback(async (data: { email: string; name?: string; id?: string; picture?: string; password?: string }) => {
-    try {
-      const res = await fetch('/api/auth/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.user) {
-          setUser(json.user);
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(json.user));
-          return json.user;
-        }
-      } else {
-        const errJson = await res.json().catch(() => ({}));
-        if (errJson?.error) {
-          throw new Error(errJson.error);
-        }
-      }
-    } catch (err: any) {
-      if (err.message && err.message.includes('password')) {
-        throw err;
-      }
-      console.warn('Backend sync failed, using client state:', err);
-    }
-
-    // Fallback if backend is unreachable
-    const isAdmin =
-      data.email.toLowerCase() === 'smp23997@gmail.com' ||
-      data.email.toLowerCase() === 'sakekmasudparvez@gmail.com';
-
-    const fallbackUser: User = {
-      id: data.id || `user_${Date.now()}`,
-      email: data.email,
-      name: data.name || data.email.split('@')[0],
-      picture: data.picture || null,
-      role: isAdmin ? 'ADMIN' : 'USER',
-      status: isAdmin ? 'APPROVED' : 'PENDING',
-    };
-    setUser(fallbackUser);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(fallbackUser));
-    return fallbackUser;
-  }, []);
+  const syncedSub = useRef<string | null>(null);
+  const auth0Domain = (import.meta.env.VITE_AUTH0_DOMAIN as string) || "";
+  const auth0ClientId = (import.meta.env.VITE_AUTH0_CLIENT_ID as string) || "";
 
   const refreshUser = useCallback(async () => {
-    if (!user?.email) return;
     try {
-      const res = await fetch(`/api/auth/me?email=${encodeURIComponent(user.email)}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.user) {
-          setUser(json.user);
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(json.user));
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to refresh user from backend:', err);
-    }
-  }, [user?.email]);
+      const currentUser = await requestUser("me");
+      setUser(currentUser);
+    } catch (error) {
+      setUser(null);
 
-  useEffect(() => {
-    if (user?.email) {
-      refreshUser().finally(() => setIsLoading(false));
-    } else {
+      if (
+        error instanceof Error &&
+        !error.message.includes("Not authenticated")
+      ) {
+        console.error("Could not refresh user:", error);
+      }
+    }
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const currentUser = await requestUser("login", {
+        email,
+        password,
+      });
+      setUser(currentUser);
+    } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const login = async (userData: { email: string; name?: string; id?: string; picture?: string; password?: string }) => {
-    setIsLoading(true);
-    await syncWithBackend(userData);
-    setIsLoading(false);
-  };
+  const signup = useCallback(
+    async (name: string, email: string, password: string) => {
+      setIsLoading(true);
+      try {
+        const currentUser = await requestUser("signup", {
+          name,
+          email,
+          password,
+        });
+        setUser(currentUser);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
-  const loginWithAuth0 = () => {
-    const domain = auth0Domain || 'dev-r2pn0p5oac54ej5y.us.auth0.com';
-    const clientId = auth0ClientId || '9XNj49jmScArNeqmyTxxcS6Idvikx97M';
+  const loginWithGoogle = useCallback(async () => {
+    await loginWithRedirect({
+      authorizationParams: {
+        connection: "google-oauth2",
+        audience: AUTH0_AUDIENCE,
+        scope: "openid profile email",
+      },
+      appState: { returnTo: window.location.pathname },
+    });
+  }, [loginWithRedirect]);
 
-    if (domain && clientId) {
-      const redirectUri = window.location.origin;
-      const authUrl = `https://${domain}/authorize?client_id=${encodeURIComponent(
-        clientId
-      )}&response_type=token%20id_token&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&scope=openid%20profile%20email&nonce=${Math.random().toString(36).substring(7)}`;
+  // Exchange the verified Auth0 access token for an app session.
+  useEffect(() => {
+    if (auth0Loading) return;
 
-      window.location.href = authUrl;
+    if (!auth0Authenticated || !auth0User?.sub) {
+      syncedSub.current = null;
+      return;
     }
-  };
 
-  const loginAsAdmin = async () => {
-    await login({
-      email: 'smp23997@gmail.com',
-      name: 'Salek Masud Parvez (Admin)',
-      id: 'auth0|admin_smp',
-      password: 'admin_parvez@25$J',
-    });
-  };
+    if (syncedSub.current === auth0User.sub) return;
 
-  const loginAsDemoUser = async () => {
-    try {
-      await fetch('/api/admin/users/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'developer.alex@gmail.com', status: 'APPROVED' }),
+    let cancelled = false;
+    const sub = auth0User.sub;
+
+    (async () => {
+      setIsLoading(true);
+      try {
+        const token = await getAccessTokenSilently({
+          authorizationParams: { audience: AUTH0_AUDIENCE },
+        });
+
+        const response = await fetch(`${API_URL}/api/auth/google/session`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || "Google authentication failed.");
+        }
+
+        if (!cancelled) {
+          setUser(data.user);
+          syncedSub.current = sub;
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Google session setup failed:", error);
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    auth0Authenticated,
+    auth0Loading,
+    auth0User?.sub,
+    getAccessTokenSilently,
+  ]);
+
+  // Restore an existing backend session on initial load.
+  useEffect(() => {
+    if (auth0Loading) return;
+
+    if (auth0Authenticated) {
+      // The Google exchange effect owns this loading state.
+      return;
+    }
+
+    let cancelled = false;
+
+    requestUser("me")
+      .then((currentUser) => {
+        if (!cancelled) setUser(currentUser);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
       });
-    } catch {}
 
-    await login({
-      email: 'developer.alex@gmail.com',
-      name: 'Alex Developer',
-      id: 'auth0|user_alex',
-    });
+    return () => {
+      cancelled = true;
+    };
+  }, [auth0Authenticated, auth0Loading]);
 
+  const logout = useCallback(async () => {
     try {
-      await fetch('/api/admin/users/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'developer.alex@gmail.com', status: 'APPROVED' }),
+      await fetch(`${API_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
       });
-      await refreshUser();
-    } catch {}
-  };
+    } finally {
+      setUser(null);
+      syncedSub.current = null;
 
-  const loginAsPendingUser = async () => {
-    await login({
-      email: `new.learner_${Math.floor(Math.random() * 900 + 100)}@gmail.com`,
-      name: 'New Developer',
-    });
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
-  };
+      if (auth0Authenticated) {
+        auth0Logout({
+          logoutParams: {
+            returnTo: window.location.origin,
+          },
+        });
+      }
+    }
+  }, [auth0Authenticated, auth0Logout]);
 
   const isAuthenticated = !!user;
-  const isPermitted = !!user && (user.status === 'APPROVED' || user.role === 'ADMIN');
-  const isAdmin = !!user && user.role === 'ADMIN';
+  const isAdmin = user?.role === "ADMIN";
+  const isPermitted = !!user && (user.status === "APPROVED" || isAdmin);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
+        isLoading: isLoading || auth0Loading,
         isAuthenticated,
         isPermitted,
         isAdmin,
         auth0Domain,
         auth0ClientId,
         login,
-        loginWithAuth0,
-        loginAsAdmin,
-        loginAsDemoUser,
-        loginAsPendingUser,
+        signup,
+        loginWithGoogle,
         logout,
         refreshUser,
       }}
@@ -235,10 +268,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
+
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
+
   return context;
-};
+}

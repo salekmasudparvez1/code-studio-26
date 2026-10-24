@@ -1,11 +1,11 @@
-import React from 'react';
-import { Settings } from 'lucide-react';
-import { Cell, CodeCell, GraphCell, DelayCell } from '../../../types/cell';
-import { SectionTitle } from '../../common/SectionTitle';
-import { Card } from '../../common/Card';
-import { CodeInspector } from './CodeInspector';
-import { GraphInspector } from './GraphInspector';
-import { DelayInspector } from './DelayInspector';
+import React from "react";
+import { Settings } from "lucide-react";
+import { Cell, CodeCell, GraphCell, DelayCell } from "../../../types/cell";
+import { SectionTitle } from "../../common/SectionTitle";
+import { Card } from "../../common/Card";
+import { CodeInspector } from "./CodeInspector";
+import { GraphInspector } from "./GraphInspector";
+import { DelayInspector } from "./DelayInspector";
 
 interface CellInspectorProps {
   activeCell: Cell | null;
@@ -25,19 +25,19 @@ export const CellInspector: React.FC<CellInspectorProps> = ({
           <div className="empty-state">Select a cell to edit</div>
         ) : (
           <>
-            {activeCell.type === 'code' && (
+            {activeCell.type === "code" && (
               <CodeInspector
                 cell={activeCell as CodeCell}
                 onChange={(updates) => onUpdateCell(activeCell.id, updates)}
               />
             )}
-            {activeCell.type === 'graph' && (
+            {activeCell.type === "graph" && (
               <GraphInspector
                 cell={activeCell as GraphCell}
                 onChange={(updates) => onUpdateCell(activeCell.id, updates)}
               />
             )}
-            {activeCell.type === 'delay' && (
+            {activeCell.type === "delay" && (
               <DelayInspector
                 cell={activeCell as DelayCell}
                 onChange={(updates) => onUpdateCell(activeCell.id, updates)}
@@ -49,4 +49,3 @@ export const CellInspector: React.FC<CellInspectorProps> = ({
     </div>
   );
 };
-

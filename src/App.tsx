@@ -1,41 +1,42 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { AuthProvider } from './context/AuthContext';
-import { Navbar } from './components/Navigation/Navbar';
-import { LandingPage } from './components/Landing/LandingPage';
-import { LoginPage } from './components/Auth/LoginPage';
-import { DashboardPage } from './components/Dashboard/DashboardPage';
-import { StudioGatekeeper } from './components/Studio/StudioGatekeeper';
-import { StudioWorkspace } from './components/Studio/StudioWorkspace';
+import React, { useState, useEffect, useCallback } from "react";
+import { AuthProvider } from "./context/AuthContext";
+import { Navbar } from "./components/Navigation/Navbar";
+import { LandingPage } from "./components/Landing/LandingPage";
 
-export type AppView = 'home' | 'studio' | 'dashboard' | 'login';
+import { DashboardPage } from "./components/Dashboard/DashboardPage";
+import { StudioGatekeeper } from "./components/Studio/StudioGatekeeper";
+import { StudioWorkspace } from "./components/Studio/StudioWorkspace";
+import AuthPage from "./components/Auth/AuthPage";
+
+export type AppView = "home" | "studio" | "dashboard" | "login";
 
 function parseViewFromPath(pathname: string): AppView {
-  const cleanPath = pathname.replace(/\/$/, '');
-  if (cleanPath === '/studio') return 'studio';
-  if (cleanPath === '/dashboard') return 'dashboard';
-  if (cleanPath === '/login') return 'login';
-  return 'home';
+  const cleanPath = pathname.replace(/\/$/, "");
+  if (cleanPath === "/studio") return "studio";
+  if (cleanPath === "/dashboard") return "dashboard";
+  if (cleanPath === "/login") return "login";
+  return "home";
 }
 
 function pathForView(view: AppView): string {
-  if (view === 'studio') return '/studio';
-  if (view === 'dashboard') return '/dashboard';
-  if (view === 'login') return '/login';
-  return '/';
+  if (view === "studio") return "/studio";
+  if (view === "dashboard") return "/dashboard";
+  if (view === "login") return "/login";
+  return "/";
 }
 
 const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(() =>
-    parseViewFromPath(window.location.pathname)
+    parseViewFromPath(window.location.pathname),
   );
 
   const navigateTo = useCallback((view: AppView) => {
     setCurrentView(view);
     const targetPath = pathForView(view);
     if (window.location.pathname !== targetPath) {
-      window.history.pushState({}, '', targetPath);
+      window.history.pushState({}, "", targetPath);
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   // Listen to browser Back / Forward buttons
@@ -43,8 +44,8 @@ const AppContent: React.FC = () => {
     const handlePopState = () => {
       setCurrentView(parseViewFromPath(window.location.pathname));
     };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   return (
@@ -52,13 +53,15 @@ const AppContent: React.FC = () => {
       <Navbar currentView={currentView} onNavigate={navigateTo} />
 
       <main className="site-main-viewport">
-        {currentView === 'home' && <LandingPage onNavigate={navigateTo} />}
+        {currentView === "home" && <LandingPage onNavigate={navigateTo} />}
 
-        {currentView === 'login' && <LoginPage onNavigate={navigateTo} />}
+        {currentView === "login" && <AuthPage />}
 
-        {currentView === 'dashboard' && <DashboardPage onNavigate={navigateTo} />}
+        {currentView === "dashboard" && (
+          <DashboardPage onNavigate={navigateTo} />
+        )}
 
-        {currentView === 'studio' && (
+        {currentView === "studio" && (
           <StudioGatekeeper onNavigate={navigateTo}>
             <StudioWorkspace />
           </StudioGatekeeper>

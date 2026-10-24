@@ -1,27 +1,32 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { FpsOption } from '../../types/animation';
-import { CellType, GraphType } from '../../types/cell';
-import { useProjectCells } from '../../hooks/useProjectCells';
-import { useAnimationPlayback } from '../../hooks/useAnimationPlayback';
-import { useMediaRecorder } from '../../hooks/useMediaRecorder';
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { FpsOption } from "../../types/animation";
+import { CellType, GraphType } from "../../types/cell";
+import { useProjectCells } from "../../hooks/useProjectCells";
+import { useAnimationPlayback } from "../../hooks/useAnimationPlayback";
+import { useMediaRecorder } from "../../hooks/useMediaRecorder";
 import {
   getTotalDuration,
   getTotalCharCount,
   getVisibleCharCount,
   getTimelineMap,
   getCellAtTime,
-} from '../../utils/duration';
-import { clamp } from '../../utils/math';
-import { Header } from '../Header/Header';
-import { Sidebar } from '../Sidebar/Sidebar';
-import { MainPanel } from '../MainPanel/MainPanel';
-import { ExportFormat, ExportResolution, ExportSettings } from '../../hooks/useMediaRecorder';
+} from "../../utils/duration";
+import { clamp } from "../../utils/math";
+
+import { Sidebar } from "../Sidebar/Sidebar";
+import { MainPanel } from "../MainPanel/MainPanel";
+import {
+  ExportFormat,
+  ExportResolution,
+  ExportSettings,
+} from "../../hooks/useMediaRecorder";
 
 export const StudioWorkspace: React.FC = () => {
   const [speed, setSpeed] = useState<number>(18);
   const [fps, setFps] = useState<FpsOption>(30);
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('mp4');
-  const [exportResolution, setExportResolution] = useState<ExportResolution>('1080p');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("mp4");
+  const [exportResolution, setExportResolution] =
+    useState<ExportResolution>("1080p");
   const [exportFps, setExportFps] = useState(30);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -87,19 +92,29 @@ export const StudioWorkspace: React.FC = () => {
         pause();
         let offset = 0;
         if (!jumpToStart) {
-          if (entry.cell.type === 'code') {
-            offset = Math.min(entry.duration * 0.7, Math.max(0.1, entry.duration - 0.05));
-          } else if (entry.cell.type === 'graph') {
-            offset = Math.min(entry.duration * 0.5, Math.max(0.1, entry.duration - 0.05));
+          if (entry.cell.type === "code") {
+            offset = Math.min(
+              entry.duration * 0.7,
+              Math.max(0.1, entry.duration - 0.05),
+            );
+          } else if (entry.cell.type === "graph") {
+            offset = Math.min(
+              entry.duration * 0.5,
+              Math.max(0.1, entry.duration - 0.05),
+            );
           } else {
             offset = Math.min(entry.duration * 0.5, 0.5);
           }
         }
-        const targetTime = clamp(entry.start + offset, 0, Math.max(0.001, totalDuration));
+        const targetTime = clamp(
+          entry.start + offset,
+          0,
+          Math.max(0.001, totalDuration),
+        );
         seek(targetTime);
       }
     },
-    [cells, totalDuration, pause, seek, setActiveCellId]
+    [cells, totalDuration, pause, seek, setActiveCellId],
   );
 
   // Handler for adding a cell and immediately navigating the preview to it
@@ -113,14 +128,20 @@ export const StudioWorkspace: React.FC = () => {
         if (entry) {
           pause();
           const offset =
-            entry.cell.type === 'code'
-              ? Math.min(entry.duration * 0.7, Math.max(0.1, entry.duration - 0.05))
-              : Math.min(entry.duration * 0.5, Math.max(0.1, entry.duration - 0.05));
+            entry.cell.type === "code"
+              ? Math.min(
+                  entry.duration * 0.7,
+                  Math.max(0.1, entry.duration - 0.05),
+                )
+              : Math.min(
+                  entry.duration * 0.5,
+                  Math.max(0.1, entry.duration - 0.05),
+                );
           seek(entry.start + offset);
         }
       }
     },
-    [addCell, cells, pause, seek]
+    [addCell, cells, pause, seek],
   );
 
   // Keep activeCellId synchronized with timeline scrubbing and playback
@@ -136,7 +157,7 @@ export const StudioWorkspace: React.FC = () => {
 
   return (
     <div className="app-container">
-      <Header />
+      {/* <Header /> */}
       <div className="app-workspace">
         <Sidebar
           cells={cells}
@@ -202,4 +223,3 @@ export const StudioWorkspace: React.FC = () => {
     </div>
   );
 };
-

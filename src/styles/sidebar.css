@@ -90,3 +90,129 @@
   }
 }
 
+/* Photoshop-inspired project cell panel */
+
+
+.photoshop-cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 9px;
+  background: #292929;
+  border-bottom: 1px solid #383838;
+}
+
+.photoshop-cell-header>* {
+  min-width: 0;
+}
+
+.photoshop-collapse-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: #a8a8a8;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.photoshop-collapse-button:hover {
+  color: #fff;
+  background: #383838;
+  border-color: #484848;
+}
+
+.photoshop-collapse-button svg {
+  transition: transform 120ms ease;
+}
+
+.photoshop-collapse-button svg.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.photoshop-cell-content {
+  min-width: 0;
+}
+
+.photoshop-cell-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 5px;
+}
+
+.photoshop-cell-row {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  transition:
+    background-color 100ms ease,
+    border-color 100ms ease;
+}
+
+.photoshop-cell-row:hover {
+  background: #303030;
+  border-color: #414141;
+}
+
+.photoshop-cell-row.is-active {
+  background: #263e56;
+  border-color: #3d78b5;
+}
+
+/* Preserve the active row's appearance on hover */
+.photoshop-cell-row.is-active:hover {
+  background: #2b4763;
+  border-color: #5795d0;
+}
+
+.photoshop-cell-row:focus-within {
+  outline: 1px solid #6aa9e8;
+  outline-offset: -1px;
+}
+
+.photoshop-cell-actions {
+  min-width: 0;
+  padding: 7px;
+  border-top: 1px solid #383838;
+  background: #262626;
+}
+
+.photoshop-cell-actions button {
+  max-width: 100%;
+}
+
+/* Responsive sidebar */
+@media (max-width: 640px) {
+  .photoshop-cell-header {
+    padding: 6px 7px;
+  }
+
+  .photoshop-cell-list {
+    padding: 4px;
+  }
+
+  .photoshop-cell-actions {
+    padding: 6px;
+  }
+
+  .photoshop-cell-section {
+    border-radius: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .photoshop-collapse-button svg,
+  .photoshop-cell-row {
+    transition: none;
+  }
+}

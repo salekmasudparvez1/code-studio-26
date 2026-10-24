@@ -1,23 +1,17 @@
-import React from 'react';
-import {
-  Lock,
-  Clock,
-  ArrowRight,
-  LogIn,
-  ShieldCheck,
-} from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import React from "react";
+import { Lock, Clock, ArrowRight, LogIn } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 interface StudioGatekeeperProps {
   children: React.ReactNode;
-  onNavigate: (view: 'home' | 'studio' | 'dashboard' | 'login') => void;
+  onNavigate: (view: "home" | "studio" | "dashboard" | "login") => void;
 }
 
 export const StudioGatekeeper: React.FC<StudioGatekeeperProps> = ({
   children,
   onNavigate,
 }) => {
-  const { user, isAuthenticated, isPermitted, loginAsAdmin } = useAuth();
+  const { user, isAuthenticated, isPermitted } = useAuth();
 
   // Permitted users and admins have direct access
   if (isAuthenticated && isPermitted) {
@@ -35,13 +29,18 @@ export const StudioGatekeeper: React.FC<StudioGatekeeperProps> = ({
 
           <h2 className="gatekeeper-title">Studio Access Restricted</h2>
           <p className="gatekeeper-desc">
-            CodeStudio 26 requires an authorized account to render high-resolution 1080p and 4K code animations.
+            CodeStudio 26 requires an authorized account to render
+            high-resolution 1080p and 4K code animations.
           </p>
 
           <div className="gatekeeper-notice-box">
-            <span className="notice-title">RBAC Policy (Role-Based Access Control):</span>
+            <span className="notice-title">
+              RBAC Policy (Role-Based Access Control):
+            </span>
             <p>
-              Only permitted <code>USER</code> accounts with <code>APPROVED</code> status or administrators can access the Studio workspace.
+              Only permitted <code>USER</code> accounts with{" "}
+              <code>APPROVED</code> status or administrators can access the
+              Studio workspace.
             </p>
           </div>
 
@@ -49,7 +48,7 @@ export const StudioGatekeeper: React.FC<StudioGatekeeperProps> = ({
             <button
               type="button"
               className="btn btn-primary btn-block"
-              onClick={() => onNavigate('login')}
+              onClick={() => onNavigate("login")}
             >
               <LogIn size={16} />
               <span>Sign In with Auth0</span>
@@ -59,7 +58,7 @@ export const StudioGatekeeper: React.FC<StudioGatekeeperProps> = ({
             <button
               type="button"
               className="btn btn-secondary btn-block"
-              onClick={() => onNavigate('home')}
+              onClick={() => onNavigate("home")}
             >
               Back to Home
             </button>
@@ -79,17 +78,22 @@ export const StudioGatekeeper: React.FC<StudioGatekeeperProps> = ({
 
         <h2 className="gatekeeper-title">Access Request Pending Approval</h2>
         <p className="gatekeeper-desc">
-          Your account is currently waiting for administrator authorization to use the CodeStudio workspace.
+          Your account is currently waiting for administrator authorization to
+          use the CodeStudio workspace.
         </p>
 
         <div className="gatekeeper-user-details">
           <div className="detail-row">
             <span className="detail-label">Account:</span>
-            <span className="detail-value">{user.name} ({user.email})</span>
+            <span className="detail-value">
+              {user.name} ({user.email})
+            </span>
           </div>
           <div className="detail-row">
             <span className="detail-label">Current Status:</span>
-            <span className={`status-badge status-${user.status.toLowerCase()}`}>
+            <span
+              className={`status-badge status-${user.status.toLowerCase()}`}
+            >
               {user.status}
             </span>
           </div>
@@ -102,28 +106,10 @@ export const StudioGatekeeper: React.FC<StudioGatekeeperProps> = ({
         </div>
 
         <div className="gatekeeper-notice-box">
-          <p>
-            To test or demonstrate full access right now, you can switch to the Administrator profile with one click below:
-          </p>
-        </div>
-
-        <div className="gatekeeper-actions">
-          <button
-            type="button"
-            className="btn btn-primary btn-block"
-            onClick={async () => {
-              await loginAsAdmin();
-              onNavigate('studio');
-            }}
-          >
-            <ShieldCheck size={16} />
-            <span>Switch to Admin (Salek Masud Parvez)</span>
-          </button>
-
           <button
             type="button"
             className="btn btn-secondary btn-block"
-            onClick={() => onNavigate('dashboard')}
+            onClick={() => onNavigate("dashboard")}
           >
             Go to User Dashboard
           </button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Sparkles,
   ArrowRight,
@@ -16,11 +16,11 @@ import {
   ExternalLink,
   Play,
   Lock,
-} from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 interface LandingPageProps {
-  onNavigate: (view: 'home' | 'studio' | 'dashboard' | 'login') => void;
+  onNavigate: (view: "home" | "studio" | "dashboard" | "login") => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
@@ -28,7 +28,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText('sakekmasudparvez@gmail.com');
+    navigator.clipboard.writeText("sakekmasudparvez@gmail.com");
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2000);
   };
@@ -50,23 +50,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           </h1>
 
           <p className="hero-subtitle">
-            Turn coding tutorials, machine learning research, and technical presentations into
-            frame-accurate animations. Create progressive code typing, CNN/RNN/LSTM/YOLO model
-            diagrams, and Matplotlib simulations — with native 1080p/4K MP4 export directly from your browser.
+            Turn coding tutorials, machine learning research, and technical
+            presentations into frame-accurate animations. Create progressive
+            code typing, CNN/RNN/LSTM/YOLO model diagrams, and Matplotlib
+            simulations — with native 1080p/4K MP4 export directly from your
+            browser.
           </p>
 
           <div className="hero-cta-group">
             <button
               type="button"
               className="btn btn-primary btn-hero"
-              onClick={() => (isPermitted ? onNavigate('studio') : onNavigate('login'))}
+              onClick={() =>
+                isPermitted ? onNavigate("studio") : onNavigate("login")
+              }
             >
               <Video size={18} />
-              <span>{isPermitted ? 'Launch Studio Workspace' : 'Get Studio Access'}</span>
+              <span>
+                {isPermitted ? "Launch Studio Workspace" : "Get Studio Access"}
+              </span>
               <ArrowRight size={16} />
             </button>
 
-            <a href="#about-creator-section" className="btn btn-secondary btn-hero">
+            <a
+              href="#about-creator-section"
+              className="btn btn-secondary btn-hero"
+            >
               <Mail size={16} />
               <span>About Creator</span>
             </a>
@@ -75,7 +84,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               <button
                 type="button"
                 className="btn btn-secondary btn-hero"
-                onClick={() => onNavigate('dashboard')}
+                onClick={() => onNavigate("dashboard")}
               >
                 <ShieldCheck size={16} />
                 <span>Open Dashboard</span>
@@ -87,7 +96,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           <div className="hero-rbac-notice">
             <ShieldCheck size={14} className="text-emerald" />
             <span>
-              Protected by <strong>Auth0 RBAC</strong> — Admin approval required for studio video generation.
+              Protected by <strong>Auth0 RBAC</strong> — Admin approval required
+              for studio video generation.
             </span>
           </div>
 
@@ -100,7 +110,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <span className="dot dot-yellow" />
                   <span className="dot dot-green" />
                 </div>
-                <div className="window-title">code_studio_preview.py — 1920×1080 60FPS</div>
+                <div className="window-title">
+                  code_studio_preview.py — 1920×1080 60FPS
+                </div>
                 <div className="window-status-badge">
                   <span className="pulse-indicator" /> LIVE ENGINE
                 </div>
@@ -110,15 +122,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 <div className="preview-code-pane">
                   <pre className="code-snippet">
                     <code>
-                      <span className="code-kw">import</span> torch{'\n'}
-                      <span className="code-kw">import</span> torch.nn <span className="code-kw">as</span> nn{'\n'}
-                      {'\n'}
-                      <span className="code-comment"># Modern Vision & Sequence Models</span>{'\n'}
-                      cnn = nn.Conv2d(in_channels=<span className="code-num">3</span>, out_channels=<span className="code-num">16</span>, kernel_size=<span className="code-num">3</span>){'\n'}
-                      lstm = nn.LSTM(input_size=<span className="code-num">64</span>, hidden_size=<span className="code-num">128</span>, batch_first=<span className="code-bool">True</span>){'\n'}
-                      yolo = YOLOv8(weights=<span className="code-str">"yolov8x.pt"</span>, grid_size=<span className="code-num">7</span>){'\n'}
-                      {'\n'}
-                      <span className="code-fn">print</span>(<span className="code-str">"CodeStudio 26: Ready to animate!"</span>)
+                      <span className="code-kw">import</span> torch{"\n"}
+                      <span className="code-kw">import</span> torch.nn{" "}
+                      <span className="code-kw">as</span> nn{"\n"}
+                      {"\n"}
+                      <span className="code-comment">
+                        # Modern Vision & Sequence Models
+                      </span>
+                      {"\n"}
+                      cnn = nn.Conv2d(in_channels=
+                      <span className="code-num">3</span>, out_channels=
+                      <span className="code-num">16</span>, kernel_size=
+                      <span className="code-num">3</span>){"\n"}
+                      lstm = nn.LSTM(input_size=
+                      <span className="code-num">64</span>, hidden_size=
+                      <span className="code-num">128</span>, batch_first=
+                      <span className="code-bool">True</span>){"\n"}
+                      yolo = YOLOv8(weights=
+                      <span className="code-str">"yolov8x.pt"</span>, grid_size=
+                      <span className="code-num">7</span>){"\n"}
+                      {"\n"}
+                      <span className="code-fn">print</span>(
+                      <span className="code-str">
+                        "CodeStudio 26: Ready to animate!"
+                      </span>
+                      )
                     </code>
                   </pre>
                 </div>
@@ -151,7 +179,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <Play size={13} fill="currentColor" />
                   <span>Timeline: 00:14.0 / 00:48.0</span>
                   <div className="preview-mini-track">
-                    <div className="preview-mini-progress" style={{ width: '45%' }} />
+                    <div
+                      className="preview-mini-progress"
+                      style={{ width: "45%" }}
+                    />
                   </div>
                 </div>
                 <div className="preview-tag-list">
@@ -170,9 +201,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         <div className="section-container">
           <div className="section-header text-center">
             <span className="section-kicker">POWERFUL CAPABILITIES</span>
-            <h2 className="section-title">Built for Modern AI Engineers & Educators</h2>
+            <h2 className="section-title-landing ">
+              Built for Modern AI Engineers & Educators
+            </h2>
             <p className="section-desc">
-              Everything you need to create captivating technical visual content without heavy desktop video editing suites.
+              Everything you need to create captivating technical visual content
+              without heavy desktop video editing suites.
             </p>
           </div>
 
@@ -183,12 +217,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               </div>
               <h3 className="feature-name">Progressive Code Typing</h3>
               <p className="feature-text">
-                Character-by-character syntax-highlighted typing animations with auto-scrolling, active line highlight, and blinking terminal cursor.
+                Character-by-character syntax-highlighted typing animations with
+                auto-scrolling, active line highlight, and blinking terminal
+                cursor.
               </p>
               <ul className="feature-points">
-                <li><CheckCircle2 size={13} /> Tokenized syntax highlighting</li>
-                <li><CheckCircle2 size={13} /> Configurable typing speed & pauses</li>
-                <li><CheckCircle2 size={13} /> Integrated notebook outputs</li>
+                <li>
+                  <CheckCircle2 size={13} /> Tokenized syntax highlighting
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> Configurable typing speed & pauses
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> Integrated notebook outputs
+                </li>
               </ul>
             </div>
 
@@ -198,12 +240,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               </div>
               <h3 className="feature-name">Deep Learning Visualizers</h3>
               <p className="feature-text">
-                Animated neural network architectures: Multi-Layer Perceptrons (ANN), CNN sliding kernels, RNN unrolled loops, LSTM cell highway gates, and YOLOv8 object detection grids.
+                Animated neural network architectures: Multi-Layer Perceptrons
+                (ANN), CNN sliding kernels, RNN unrolled loops, LSTM cell
+                highway gates, and YOLOv8 object detection grids.
               </p>
               <ul className="feature-points">
-                <li><CheckCircle2 size={13} /> Dynamic synapse pulses & softmax bars</li>
-                <li><CheckCircle2 size={13} /> Forget, input & output gate equations</li>
-                <li><CheckCircle2 size={13} /> NMS bounding box evaluation</li>
+                <li>
+                  <CheckCircle2 size={13} /> Dynamic synapse pulses & softmax
+                  bars
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> Forget, input & output gate
+                  equations
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> NMS bounding box evaluation
+                </li>
               </ul>
             </div>
 
@@ -213,12 +265,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               </div>
               <h3 className="feature-name">Matplotlib Figure Simulation</h3>
               <p className="feature-text">
-                Authentic Matplotlib window simulation complete with coordinate readouts, interactive navigation toolbar, and progressive curve rendering.
+                Authentic Matplotlib window simulation complete with coordinate
+                readouts, interactive navigation toolbar, and progressive curve
+                rendering.
               </p>
               <ul className="feature-points">
-                <li><CheckCircle2 size={13} /> Real matplotlib look and toolbar icons</li>
-                <li><CheckCircle2 size={13} /> Loss curves & accuracy trajectories</li>
-                <li><CheckCircle2 size={13} /> Live canvas coordinate tracking</li>
+                <li>
+                  <CheckCircle2 size={13} /> Real matplotlib look and toolbar
+                  icons
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> Loss curves & accuracy trajectories
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> Live canvas coordinate tracking
+                </li>
               </ul>
             </div>
 
@@ -228,12 +289,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               </div>
               <h3 className="feature-name">Decision Boundaries & Clustering</h3>
               <p className="feature-text">
-                2D classification surfaces for SVM (RBF kernels), Logistic Regression, and KNN, plus t-SNE / PCA clustering and 2D loss contour gradient descent.
+                2D classification surfaces for SVM (RBF kernels), Logistic
+                Regression, and KNN, plus t-SNE / PCA clustering and 2D loss
+                contour gradient descent.
               </p>
               <ul className="feature-points">
-                <li><CheckCircle2 size={13} /> Contour decision boundaries</li>
-                <li><CheckCircle2 size={13} /> Gradient vector downhill paths</li>
-                <li><CheckCircle2 size={13} /> Centroid convergence animations</li>
+                <li>
+                  <CheckCircle2 size={13} /> Contour decision boundaries
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> Gradient vector downhill paths
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> Centroid convergence animations
+                </li>
               </ul>
             </div>
 
@@ -243,12 +312,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               </div>
               <h3 className="feature-name">Photoshop CC Layers Workflow</h3>
               <p className="feature-text">
-                Manage your animation timeline with an authentic CC Layers palette aesthetic: visibility eye toggles, color badges, ordering controls, and live selection previews.
+                Manage your animation timeline with an authentic CC Layers
+                palette aesthetic: visibility eye toggles, color badges,
+                ordering controls, and live selection previews.
               </p>
               <ul className="feature-points">
-                <li><CheckCircle2 size={13} /> Instant stage preview on cell selection</li>
-                <li><CheckCircle2 size={13} /> One-click mute / eye toggling</li>
-                <li><CheckCircle2 size={13} /> Deep Adobe blue active selection state</li>
+                <li>
+                  <CheckCircle2 size={13} /> Instant stage preview on cell
+                  selection
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> One-click mute / eye toggling
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> Deep Adobe blue active selection
+                  state
+                </li>
               </ul>
             </div>
 
@@ -258,12 +337,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               </div>
               <h3 className="feature-name">Native MP4 Video Export</h3>
               <p className="feature-text">
-                Export native, frame-accurate `.mp4` video files directly from browser memory using pure AVC1/H.264 streams with zero server lag and multi-resolution auto-export.
+                Export native, frame-accurate `.mp4` video files directly from
+                browser memory using pure AVC1/H.264 streams with zero server
+                lag and multi-resolution auto-export.
               </p>
               <ul className="feature-points">
-                <li><CheckCircle2 size={13} /> High-compatibility H.264 / AVC1</li>
-                <li><CheckCircle2 size={13} /> 1080p, 2K, and 4K resolutions</li>
-                <li><CheckCircle2 size={13} /> 100% client-side zero server compute</li>
+                <li>
+                  <CheckCircle2 size={13} /> High-compatibility H.264 / AVC1
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> 1080p, 2K, and 4K resolutions
+                </li>
+                <li>
+                  <CheckCircle2 size={13} /> 100% client-side zero server
+                  compute
+                </li>
               </ul>
             </div>
           </div>
@@ -288,16 +376,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 </div>
 
                 <p className="creator-bio">
-                  Hi! I'm <strong>Salek Masud Parvez</strong>. I designed and built{' '}
-                  <strong>CodeStudio 26</strong> to solve a fundamental problem in software
-                  and AI education: making code motion and complex deep learning concepts
-                  visually intuitive, effortless to animate, and ready to share instantly.
+                  Hi! I'm <strong>Salek Masud Parvez</strong>. I designed and
+                  built <strong>CodeStudio 26</strong> to solve a fundamental
+                  problem in software and AI education: making code motion and
+                  complex deep learning concepts visually intuitive, effortless
+                  to animate, and ready to share instantly.
                 </p>
 
                 <p className="creator-bio">
-                  With a background spanning React 19, TypeScript, PostgreSQL databases, Canvas 2D
-                  rendering architectures, and PyTorch deep learning models, I build software that
-                  merges engineering rigor with delightful user experience.
+                  With a background spanning React 19, TypeScript, PostgreSQL
+                  databases, Canvas 2D rendering architectures, and PyTorch deep
+                  learning models, I build software that merges engineering
+                  rigor with delightful user experience.
                 </p>
 
                 {/* Contact Information & Action Pills */}
@@ -321,8 +411,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                       onClick={handleCopyEmail}
                       title="Copy email to clipboard"
                     >
-                      {copiedEmail ? <Check size={14} className="text-emerald" /> : <Copy size={14} />}
-                      <span>{copiedEmail ? 'Copied!' : 'Copy'}</span>
+                      {copiedEmail ? (
+                        <Check size={14} className="text-emerald" />
+                      ) : (
+                        <Copy size={14} />
+                      )}
+                      <span>{copiedEmail ? "Copied!" : "Copy"}</span>
                     </button>
                   </div>
 
@@ -367,19 +461,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 </div>
 
                 {/* Tech Stack Chips */}
-                <div className="creator-skills-wrap">
-                  <span className="skills-heading">Technical Stack & Architecture:</span>
-                  <div className="skills-badges">
-                    <span className="skill-chip">React 19</span>
-                    <span className="skill-chip">TypeScript 7</span>
-                    <span className="skill-chip">PostgreSQL (Pooled)</span>
-                    <span className="skill-chip">Auth0 RBAC</span>
-                    <span className="skill-chip">Canvas 2D API</span>
-                    <span className="skill-chip">Vite 8</span>
-                    <span className="skill-chip">PyTorch & DL</span>
-                    <span className="skill-chip">MediaRecorder MP4</span>
-                  </div>
-                </div>
               </div>
 
               {/* Creator Card Right / RBAC Summary */}
@@ -400,8 +481,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                     <h4>Studio Security & Access Control</h4>
                   </div>
                   <p className="panel-desc">
-                    CodeStudio 26 implements enterprise <strong>Role-Based Access Control (RBAC)</strong>.
-                    Only users with <strong>APPROVED</strong> permission status can generate video content in the Studio.
+                    CodeStudio 26 implements enterprise{" "}
+                    <strong>Role-Based Access Control (RBAC)</strong>. Only
+                    users with <strong>APPROVED</strong> permission status can
+                    generate video content in the Studio.
                   </p>
 
                   <div className="rbac-roles-list">
@@ -411,17 +494,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                         <span className="role-status-tag">Full Control</span>
                       </div>
                       <p className="role-desc">
-                        Assigned to <code>sakekmasudparvez@gmail.com</code>. Can approve/reject studio access, manage users, and configure the platform.
+                        Assigned to <code>sakekmasudparvez@gmail.com</code>. Can
+                        approve/reject studio access, manage users, and
+                        configure the platform.
                       </p>
                     </div>
 
                     <div className="rbac-role-card">
                       <div className="rbac-role-header">
                         <span className="role-badge role-user">USER</span>
-                        <span className="role-status-tag">Permitted Access</span>
+                        <span className="role-status-tag">
+                          Permitted Access
+                        </span>
                       </div>
                       <p className="role-desc">
-                        Approved developers and educators with access to create animations, edit cells, and export MP4 videos.
+                        Approved developers and educators with access to create
+                        animations, edit cells, and export MP4 videos.
                       </p>
                     </div>
                   </div>
@@ -431,7 +519,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                       <button
                         type="button"
                         className="btn btn-primary btn-block"
-                        onClick={() => onNavigate('dashboard')}
+                        onClick={() => onNavigate("dashboard")}
                       >
                         <ShieldCheck size={15} />
                         <span>Open RBAC Management Console</span>
@@ -440,7 +528,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                       <button
                         type="button"
                         className="btn btn-primary btn-block"
-                        onClick={() => onNavigate('login')}
+                        onClick={() => onNavigate("login")}
                       >
                         <Lock size={15} />
                         <span>Sign In with Auth0 to Request Access</span>
@@ -458,23 +546,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       <footer className="landing-footer">
         <div className="footer-container">
           <div className="footer-brand">
-            <img src="/logo.svg" alt="CodeStudio 26 Logo" className="footer-logo" />
+            <img
+              src="/favicon.svg"
+              alt="CodeStudio 26 Logo"
+              className="footer-logo"
+            />
             <span className="footer-brand-name">CodeStudio 26</span>
           </div>
 
           <p className="footer-copy">
             Designed & Developed by <strong>Salek Masud Parvez</strong> (
-            <a href="mailto:sakekmasudparvez@gmail.com">sakekmasudparvez@gmail.com</a> •{' '}
-            <a href="https://github.com/salekmasudparvez1" target="_blank" rel="noopener noreferrer">
+            <a href="mailto:sakekmasudparvez@gmail.com">
+              sakekmasudparvez@gmail.com
+            </a>{" "}
+            •{" "}
+            <a
+              href="https://github.com/salekmasudparvez1"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               @salekmasudparvez1
             </a>
             ). Licensed under MIT.
           </p>
 
           <div className="footer-links">
-            <button type="button" onClick={() => onNavigate('home')}>Home</button>
-            <button type="button" onClick={() => onNavigate('studio')}>Studio</button>
-            <button type="button" onClick={() => onNavigate('login')}>Login</button>
+            <button type="button" onClick={() => onNavigate("home")}>
+              Home
+            </button>
+            <button type="button" onClick={() => onNavigate("studio")}>
+              Studio
+            </button>
+            <button type="button" onClick={() => onNavigate("login")}>
+              Login
+            </button>
           </div>
         </div>
       </footer>
