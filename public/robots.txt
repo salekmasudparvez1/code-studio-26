@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://code-animation-26.vercel.app/sitemap.xml
+

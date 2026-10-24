@@ -1,0 +1,339 @@
+/* ==========================================================================
+   Photoshop-Inspired Layers & Project Cells Panel
+   ========================================================================== */
+
+.cell-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+/* Individual Layer Item */
+.cell-item {
+  background: var(--ps-item);
+  border: 1px solid #222736;
+  border-left: 3.5px solid transparent;
+  border-radius: 6px;
+  padding: 6px 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+  user-select: none;
+  position: relative;
+}
+
+.cell-item:hover {
+  background: var(--ps-item-hover);
+  border-color: #343c52;
+}
+
+/* Signature Photoshop Active Layer Selection */
+.cell-item.active {
+  background: var(--ps-item-active);
+  border-color: #1e4e7e;
+  border-left-color: var(--ps-active-border);
+  box-shadow: inset 0 0 14px rgba(0, 145, 255, 0.14);
+}
+
+.cell-item.active .cell-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Layer Visibility Eye Indicator */
+.layer-visibility-icon {
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.12s;
+  flex-shrink: 0;
+}
+
+.layer-visibility-icon:hover {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.cell-item.active .layer-visibility-icon {
+  color: #38bdf8;
+}
+
+/* Layer Thumbnail / Badge */
+.cell-type-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #181d2a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9bb0e0;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Adobe/Photoshop Style Color Badges */
+.cell-type-icon.cell-type-code {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.cell-type-icon.cell-type-ann,
+.cell-type-icon.cell-type-neural-network {
+  color: #c084fc;
+  background: rgba(192, 132, 252, 0.15);
+  border-color: rgba(192, 132, 252, 0.3);
+}
+
+.cell-type-icon.cell-type-cnn {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.cell-type-icon.cell-type-rnn {
+  color: #fb923c;
+  background: rgba(251, 146, 60, 0.15);
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.cell-type-icon.cell-type-lstm {
+  color: #eab308;
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.cell-type-icon.cell-type-yolo {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.cell-type-icon.cell-type-matplotlib {
+  color: #06b6d4;
+  background: rgba(6, 182, 212, 0.15);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.cell-type-icon.cell-type-decision-boundary {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.cell-type-icon.cell-type-clustering {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.cell-type-icon.cell-type-gradient-descent {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.cell-type-icon.cell-type-graph,
+.cell-type-icon.cell-type-bar {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.cell-type-icon.cell-type-delay {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+/* Layer Info Text */
+.cell-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cell-name {
+  font-weight: 600;
+  font-size: 12px;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.cell-meta {
+  font-size: 10px;
+  color: #78859e;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.cell-type-badge {
+  text-transform: uppercase;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.cell-duration-badge {
+  background: #111520;
+  border: 1px solid #232838;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  color: #cbd5e1;
+}
+
+/* Layer Action Buttons */
+.cell-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0.7;
+  transition: opacity 0.12s;
+}
+
+.cell-item:hover .cell-actions,
+.cell-item.active .cell-actions {
+  opacity: 1;
+}
+
+.cell-action-btn {
+  padding: 3px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #8b9ac0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+
+.cell-action-btn:hover:not(:disabled) {
+  background: #232b3d;
+  color: white;
+  border-color: #3b4763;
+}
+
+.cell-action-btn.danger:hover:not(:disabled) {
+  background: #3b1922;
+  color: #fca5a5;
+  border-color: #6b2131;
+}
+
+.cell-action-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+/* Bottom New Layer Actions */
+.add-cell-container {
+  position: relative;
+  margin-top: 4px;
+}
+
+.add-cell-bar {
+  display: flex;
+  gap: 5px;
+}
+
+.add-cell-bar .btn {
+  flex: 1;
+  background: #161a25;
+  border-color: #2b3346;
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+.add-cell-bar .btn:hover {
+  background: #202738;
+  border-color: #3f4c68;
+}
+
+/* AI / ML Models Dropdown */
+.ai-dropdown-wrapper {
+  position: relative;
+  flex: 1.4;
+  display: flex;
+}
+
+.ai-dropdown-wrapper .btn {
+  width: 100%;
+}
+
+.ai-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -20px;
+  right: -20px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: #141724;
+  border: 1px solid #30384d;
+  border-radius: 8px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.ai-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.1s;
+  font-family: inherit;
+}
+
+.ai-menu-item:hover {
+  background: #202638;
+  border-color: #3b4661;
+}
+
+.ai-menu-item .menu-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.ai-menu-item .menu-icon.ann { color: #c084fc; }
+.ai-menu-item .menu-icon.cnn { color: #f43f5e; }
+.ai-menu-item .menu-icon.rnn { color: #fb923c; }
+.ai-menu-item .menu-icon.lstm { color: #eab308; }
+.ai-menu-item .menu-icon.yolo { color: #10b981; }
+.ai-menu-item .menu-icon.matplotlib { color: #06b6d4; }
+
+.ai-menu-item .menu-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.ai-menu-item .menu-desc {
+  font-size: 9.5px;
+  color: #8b9ac0;
+}
+

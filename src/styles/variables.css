@@ -1,0 +1,40 @@
+:root {
+  color-scheme: dark;
+
+  /* Photoshop / Premiere CC Dark Theme Tokens */
+  --ps-bg: #11141c;
+  --ps-panel: #181b24;
+  --ps-card: #1c202c;
+  --ps-item: #141722;
+  --ps-item-hover: #1e2333;
+  --ps-item-active: #162c4a;
+  --ps-active-border: #0091ff;
+  --ps-active-glow: rgba(0, 145, 255, 0.25);
+
+  --line: #262b3a;
+  --line-light: #32394d;
+  --text: #f0f4f8;
+  --text-dim: #cbd5e1;
+  --muted: #8e9bb3;
+
+  /* Accents */
+  --accent: #38bdf8;
+  --accent-glow: #2563eb;
+  --accent-hover: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-purple: #a855f7;
+  --accent-pink: #ec4899;
+  --accent-amber: #f59e0b;
+  --accent-emerald: #10b981;
+  --accent-rose: #f43f5e;
+
+  /* Status */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
