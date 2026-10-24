@@ -100,7 +100,7 @@ export const StudioGatekeeper: React.FC<StudioGatekeeperProps> = ({
           <div className="detail-row">
             <span className="detail-label">Reviewing Admin:</span>
             <span className="detail-value">
-              Salek Masud Parvez (<code>sakekmasudparvez@gmail.com</code>)
+              Salek Masud Parvez (<code>smp23997@gmail.com</code>)
             </span>
           </div>
         </div>
@@ -108,10 +108,10 @@ export const StudioGatekeeper: React.FC<StudioGatekeeperProps> = ({
         <div className="gatekeeper-notice-box">
           <button
             type="button"
-            className="btn btn-secondary btn-block"
+            className="btn btn-primary btn-block"
             onClick={() => onNavigate("dashboard")}
           >
-            Go to User Dashboard
+            Go to Dashboard & Manage Access Packages
           </button>
         </div>
       </div>

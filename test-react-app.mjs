@@ -131,6 +131,10 @@ server.listen(4567, async () => {
     await adminConsoleTitle.waitFor();
     console.log('Admin RBAC Console verified in Dashboard');
 
+    const packagesTitle = page.getByText(/Studio Access Packages & Permissions/i);
+    await packagesTitle.waitFor();
+    console.log('Studio Access Packages verified in Dashboard');
+
     // 5. Navigate to Studio Workspace as Permitted Admin
     const launchStudioBtn = page.getByRole('button', { name: /Launch Studio Workspace/i });
     await launchStudioBtn.click();

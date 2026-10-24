@@ -494,7 +494,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                         <span className="role-status-tag">Full Control</span>
                       </div>
                       <p className="role-desc">
-                        Assigned to <code>sakekmasudparvez@gmail.com</code>. Can
+                        Assigned to <code>smp23997@gmail.com</code>. Can
                         approve/reject studio access, manage users, and
                         configure the platform.
                       </p>

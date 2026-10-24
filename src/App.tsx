@@ -55,7 +55,9 @@ const AppContent: React.FC = () => {
       <main className="site-main-viewport">
         {currentView === "home" && <LandingPage onNavigate={navigateTo} />}
 
-        {currentView === "login" && <AuthPage />}
+        {currentView === "login" && (
+          <AuthPage onNavigate={navigateTo} />
+        )}
 
         {currentView === "dashboard" && (
           <DashboardPage onNavigate={navigateTo} />

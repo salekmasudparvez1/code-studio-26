@@ -25,7 +25,7 @@ export const CellList: React.FC<CellListProps> = memo(
     onDeleteCell,
     onImportCells,
   }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
 
     return (
       <section className="sidebar-section ">

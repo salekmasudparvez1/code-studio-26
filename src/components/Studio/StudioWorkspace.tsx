@@ -13,6 +13,7 @@ import {
 } from "../../utils/duration";
 import { clamp } from "../../utils/math";
 
+import { Header } from "../Header/Header";
 import { Sidebar } from "../Sidebar/Sidebar";
 import { MainPanel } from "../MainPanel/MainPanel";
 import {
@@ -157,7 +158,7 @@ export const StudioWorkspace: React.FC = () => {
 
   return (
     <div className="app-container">
-      {/* <Header /> */}
+      <Header />
       <div className="app-workspace">
         <Sidebar
           cells={cells}

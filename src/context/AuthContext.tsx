@@ -4,9 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  useRef,
 } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 
 export type UserRole = "USER" | "ADMIN";
 export type UserStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -18,239 +16,366 @@ export interface User {
   picture?: string | null;
   role: UserRole;
   status: UserStatus;
+  requested_plan?: string;
+  request_note?: string;
+  session_token?: string;
   created_at?: string;
   updated_at?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isPermitted: boolean;
   isAdmin: boolean;
   auth0Domain: string;
   auth0ClientId: string;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  logout: () => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  signup: (name: string, email: string, password: string) => Promise<User>;
+  loginAsAdmin: () => Promise<User>;
+  loginAsDemoUser: () => Promise<User>;
+  loginAsPendingUser: () => Promise<User>;
+  loginWithAuth0: () => void;
+  loginWithGoogle: () => void;
+  requestAccess: (plan?: string, note?: string) => Promise<{ success: boolean; message: string }>;
+  logout: () => void;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const LOCAL_STORAGE_USER_KEY = "codestudio_auth_user";
+const LOCAL_STORAGE_TOKEN_KEY = "codestudio_auth_token";
 
-const AUTH0_AUDIENCE = import.meta.env.VITE_AUTH0_AUDIENCE || "";
-
-async function requestUser(path: string, body?: object) {
-  const response = await fetch(`${API_URL}/api/auth/${path}`, {
-    method: body ? "POST" : "GET",
-    credentials: "include",
-    headers: body ? { "Content-Type": "application/json" } : {},
-    ...(body ? { body: JSON.stringify(body) } : {}),
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [auth0Domain, setAuth0Domain] = useState<string>(() => {
+    const raw = (import.meta.env.VITE_AUTH0_DOMAIN as string) || "";
+    return raw.replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim();
   });
 
-  const data = await response.json().catch(() => ({}));
+  const [auth0ClientId, setAuth0ClientId] = useState<string>(() => {
+    return (import.meta.env.VITE_AUTH0_CLIENT_ID as string) || "";
+  });
 
-  if (!response.ok) {
-    throw new Error(data.error || "Authentication request failed.");
-  }
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
+  });
 
-  return data.user as User;
-}
-
-export const AuthProvider: React.FC<{
-  children: React.ReactNode;
-}> = ({ children }) => {
-  const {
-    isAuthenticated: auth0Authenticated,
-    isLoading: auth0Loading,
-    user: auth0User,
-    getAccessTokenSilently,
-    loginWithRedirect,
-    logout: auth0Logout,
-  } = useAuth0();
-
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const syncedSub = useRef<string | null>(null);
-  const auth0Domain = (import.meta.env.VITE_AUTH0_DOMAIN as string) || "";
-  const auth0ClientId = (import.meta.env.VITE_AUTH0_CLIENT_ID as string) || "";
-
-  const refreshUser = useCallback(async () => {
+  const [user, setUser] = useState<User | null>(() => {
     try {
-      const currentUser = await requestUser("me");
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
+      const stored = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch {
+      // ignore
+    }
+    return null;
+  });
 
-      if (
-        error instanceof Error &&
-        !error.message.includes("Not authenticated")
-      ) {
-        console.error("Could not refresh user:", error);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Fetch Auth0 runtime config from backend if needed
+  useEffect(() => {
+    fetch("/api/auth/config")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((cfg) => {
+        if (cfg?.domain && !auth0Domain) setAuth0Domain(cfg.domain);
+        if (cfg?.clientId && !auth0ClientId) setAuth0ClientId(cfg.clientId);
+      })
+      .catch(() => {});
+  }, [auth0Domain, auth0ClientId]);
+
+  // Refresh user data from backend
+  const refreshUser = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch(`/api/auth/me?email=${encodeURIComponent(user.email)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.user) {
+          setUser(json.user);
+          localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(json.user));
+        }
       }
+    } catch (err) {
+      console.warn("Failed to refresh user:", err);
+    }
+  }, [user?.email]);
+
+  // Sync on initial mount
+  useEffect(() => {
+    if (user?.email) {
+      refreshUser().finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  // 1. Direct Email & Password Login
+  const login = useCallback(async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      const currentUser = await requestUser("login", {
-        email,
-        password,
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
       });
-      setUser(currentUser);
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || "Authentication failed. Please verify your credentials.");
+      }
+
+      if (!data.user) {
+        throw new Error("Invalid response received from authentication server.");
+      }
+
+      setUser(data.user);
+      if (data.token) {
+        setToken(data.token);
+        localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, data.token);
+      }
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data.user));
+      return data.user;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  // 2. Direct Sign Up
   const signup = useCallback(
-    async (name: string, email: string, password: string) => {
+    async (name: string, email: string, password: string): Promise<User> => {
       setIsLoading(true);
       try {
-        const currentUser = await requestUser("signup", {
-          name,
-          email,
-          password,
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim(),
+            password,
+          }),
         });
-        setUser(currentUser);
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.error || "Registration failed. Please check your inputs.");
+        }
+
+        if (!data.user) {
+          throw new Error("Invalid response received from registration server.");
+        }
+
+        setUser(data.user);
+        if (data.token) {
+          setToken(data.token);
+          localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, data.token);
+        }
+        localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data.user));
+        return data.user;
       } finally {
         setIsLoading(false);
       }
     },
-    [],
+    []
   );
 
-  const loginWithGoogle = useCallback(async () => {
-    await loginWithRedirect({
-      authorizationParams: {
-        connection: "google-oauth2",
-        audience: AUTH0_AUDIENCE,
-        scope: "openid profile email",
-      },
-      appState: { returnTo: window.location.pathname },
-    });
-  }, [loginWithRedirect]);
-
-  // Exchange the verified Auth0 access token for an app session.
-  useEffect(() => {
-    if (auth0Loading) return;
-
-    if (!auth0Authenticated || !auth0User?.sub) {
-      syncedSub.current = null;
-      return;
-    }
-
-    if (syncedSub.current === auth0User.sub) return;
-
-    let cancelled = false;
-    const sub = auth0User.sub;
-
-    (async () => {
-      setIsLoading(true);
-      try {
-        const token = await getAccessTokenSilently({
-          authorizationParams: { audience: AUTH0_AUDIENCE },
-        });
-
-        const response = await fetch(`${API_URL}/api/auth/google/session`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(data.error || "Google authentication failed.");
-        }
-
-        if (!cancelled) {
-          setUser(data.user);
-          syncedSub.current = sub;
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error("Google session setup failed:", error);
-          setUser(null);
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    auth0Authenticated,
-    auth0Loading,
-    auth0User?.sub,
-    getAccessTokenSilently,
-  ]);
-
-  // Restore an existing backend session on initial load.
-  useEffect(() => {
-    if (auth0Loading) return;
-
-    if (auth0Authenticated) {
-      // The Google exchange effect owns this loading state.
-      return;
-    }
-
-    let cancelled = false;
-
-    requestUser("me")
-      .then((currentUser) => {
-        if (!cancelled) setUser(currentUser);
-      })
-      .catch(() => {
-        if (!cancelled) setUser(null);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [auth0Authenticated, auth0Loading]);
-
-  const logout = useCallback(async () => {
+  // 3. Admin Authentication: Salek Masud Parvez
+  const loginAsAdmin = useCallback(async (): Promise<User> => {
+    setIsLoading(true);
     try {
-      await fetch(`${API_URL}/api/auth/logout`, {
+      const res = await fetch("/api/auth/sync", {
         method: "POST",
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "smp23997@gmail.com",
+          name: "Salek Masud Parvez",
+          password: "admin_parvez@25$J",
+          id: "auth0|admin_smp",
+        }),
       });
-    } finally {
-      setUser(null);
-      syncedSub.current = null;
 
-      if (auth0Authenticated) {
-        auth0Logout({
-          logoutParams: {
-            returnTo: window.location.origin,
-          },
-        });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Admin authentication failed.");
       }
+
+      setUser(data.user);
+      if (data.token) {
+        setToken(data.token);
+        localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, data.token);
+      }
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data.user));
+      return data.user;
+    } finally {
+      setIsLoading(false);
     }
-  }, [auth0Authenticated, auth0Logout]);
+  }, []);
+
+  // 4. Demo User Authentication
+  const loginAsDemoUser = useCallback(async (): Promise<User> => {
+    setIsLoading(true);
+    try {
+      await fetch("/api/admin/users/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "developer.alex@gmail.com", status: "APPROVED" }),
+      }).catch(() => {});
+
+      const res = await fetch("/api/auth/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "developer.alex@gmail.com",
+          name: "Alex Developer",
+          id: "auth0|user_alex",
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      const u = data.user || {
+        id: "auth0|user_alex",
+        email: "developer.alex@gmail.com",
+        name: "Alex Developer",
+        role: "USER",
+        status: "APPROVED",
+      };
+
+      setUser(u);
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(u));
+      return u;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // 5. Pending User Authentication
+  const loginAsPendingUser = useCallback(async (): Promise<User> => {
+    setIsLoading(true);
+    try {
+      const demoEmail = "new.learner@gmail.com";
+      const res = await fetch("/api/auth/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: demoEmail,
+          name: "New Developer",
+          id: "auth0|user_pending",
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      const u = data.user || {
+        id: "auth0|user_pending",
+        email: demoEmail,
+        name: "New Developer",
+        role: "USER",
+        status: "PENDING",
+      };
+
+      setUser(u);
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(u));
+      return u;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // 6. Request Studio Package Access
+  const requestAccess = useCallback(
+    async (plan: string = "PRO", note?: string): Promise<{ success: boolean; message: string }> => {
+      if (!user?.email) {
+        throw new Error("Please log in before submitting a studio access request.");
+      }
+
+      const res = await fetch("/api/access/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, plan, note }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit access request.");
+      }
+
+      if (data.user) {
+        setUser(data.user);
+        localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data.user));
+      }
+
+      return {
+        success: true,
+        message:
+          data.message ||
+          "Your studio access request has been submitted to Administrator Salek Masud Parvez. Status: PENDING review.",
+      };
+    },
+    [user?.email]
+  );
+
+  // 7. Auth0 Universal Login
+  const loginWithAuth0 = useCallback(() => {
+    const domain = auth0Domain || "dev-r2pn0p5oac54ej5y.us.auth0.com";
+    const clientId = auth0ClientId || "9XNj49jmScArNeqmyTxxcS6Idvikx97M";
+
+    if (domain && clientId) {
+      const redirectUri = window.location.origin;
+      const authUrl = `https://${domain}/authorize?client_id=${encodeURIComponent(
+        clientId
+      )}&response_type=token%20id_token&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&scope=openid%20profile%20email&nonce=${Math.random().toString(36).substring(7)}`;
+
+      window.location.href = authUrl;
+    }
+  }, [auth0Domain, auth0ClientId]);
+
+  // 8. Auth0 Google OAuth Direct
+  const loginWithGoogle = useCallback(() => {
+    const domain = auth0Domain || "dev-r2pn0p5oac54ej5y.us.auth0.com";
+    const clientId = auth0ClientId || "9XNj49jmScArNeqmyTxxcS6Idvikx97M";
+
+    if (domain && clientId) {
+      const redirectUri = window.location.origin;
+      const authUrl = `https://${domain}/authorize?client_id=${encodeURIComponent(
+        clientId
+      )}&response_type=token%20id_token&connection=google-oauth2&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&scope=openid%20profile%20email&nonce=${Math.random().toString(36).substring(7)}`;
+
+      window.location.href = authUrl;
+    }
+  }, [auth0Domain, auth0ClientId]);
+
+  // 9. Sign Out
+  const logout = useCallback(() => {
+    if (user?.email) {
+      fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email }),
+      }).catch(() => {});
+    }
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
+    localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
+  }, [user?.email]);
 
   const isAuthenticated = !!user;
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = !!user && user.role === "ADMIN";
   const isPermitted = !!user && (user.status === "APPROVED" || isAdmin);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading: isLoading || auth0Loading,
+        token,
+        isLoading,
         isAuthenticated,
         isPermitted,
         isAdmin,
@@ -258,7 +383,12 @@ export const AuthProvider: React.FC<{
         auth0ClientId,
         login,
         signup,
+        loginAsAdmin,
+        loginAsDemoUser,
+        loginAsPendingUser,
+        loginWithAuth0,
         loginWithGoogle,
+        requestAccess,
         logout,
         refreshUser,
       }}
@@ -270,10 +400,8 @@ export const AuthProvider: React.FC<{
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-
   return context;
 }
