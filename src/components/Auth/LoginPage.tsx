@@ -16,7 +16,16 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
-  const { user, isAuthenticated, login, loginAsAdmin, loginAsDemoUser, loginAsPendingUser } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    auth0Domain,
+    login,
+    loginWithAuth0,
+    loginAsAdmin,
+    loginAsDemoUser,
+    loginAsPendingUser,
+  } = useAuth();
   const [emailInput, setEmailInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,10 +164,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
                 disabled={isSubmitting}
               >
                 <Lock size={15} />
-                <span>{isSubmitting ? 'Authenticating...' : 'Continue with Auth0'}</span>
+                <span>{isSubmitting ? 'Authenticating...' : 'Sign In with Email'}</span>
                 <ArrowRight size={15} />
               </button>
+
+              {auth0Domain && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-block btn-auth0-oauth"
+                  onClick={loginWithAuth0}
+                  title={`Redirect to Auth0 (${auth0Domain})`}
+                >
+                  <img
+                    src="https://cdn.auth0.com/website/press/resources/auth0-logo-monogram.svg"
+                    alt="Auth0"
+                    width="15"
+                    height="15"
+                    onError={(e) => ((e.target as HTMLElement).style.display = 'none')}
+                  />
+                  <span>Continue with Auth0 Universal Login</span>
+                </button>
+              )}
             </form>
+
+            {auth0Domain && (
+              <div className="auth0-env-indicator">
+                <span className="env-dot" />
+                <span>Tenant: <code>{auth0Domain}</code></span>
+              </div>
+            )}
 
             <div className="login-divider">
               <span>OR USE INSTANT ROLE PROFILES</span>

@@ -20,7 +20,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isPermitted: boolean;
   isAdmin: boolean;
+  auth0Domain: string;
+  auth0ClientId: string;
   login: (userData: { email: string; name?: string; id?: string; picture?: string }) => Promise<void>;
+  loginWithAuth0: () => void;
   loginAsAdmin: () => Promise<void>;
   loginAsDemoUser: () => Promise<void>;
   loginAsPendingUser: () => Promise<void>;
@@ -33,6 +36,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const LOCAL_STORAGE_KEY = 'codestudio_auth_user';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [auth0Domain, setAuth0Domain] = useState<string>(() => {
+    const raw = (import.meta.env.VITE_AUTH0_DOMAIN as string) || '';
+    return raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+  });
+
+  const [auth0ClientId, setAuth0ClientId] = useState<string>(() => {
+    return (import.meta.env.VITE_AUTH0_CLIENT_ID as string) || '';
+  });
+
   const [user, setUser] = useState<User | null>(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -44,6 +56,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Fetch Auth0 runtime config from backend if needed
+  useEffect(() => {
+    fetch('/api/auth/config')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((cfg) => {
+        if (cfg?.domain && !auth0Domain) setAuth0Domain(cfg.domain);
+        if (cfg?.clientId && !auth0ClientId) setAuth0ClientId(cfg.clientId);
+      })
+      .catch(() => {});
+  }, [auth0Domain, auth0ClientId]);
 
   // Sync user with PostgreSQL backend
   const syncWithBackend = useCallback(async (data: { email: string; name?: string; id?: string; picture?: string }) => {
@@ -98,7 +121,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user?.email]);
 
   useEffect(() => {
-    // Check initial user status on mount
     if (user?.email) {
       refreshUser().finally(() => setIsLoading(false));
     } else {
@@ -112,6 +134,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   };
 
+  const loginWithAuth0 = () => {
+    const domain = auth0Domain || 'dev-r2pn0p5oac54ej5y.us.auth0.com';
+    const clientId = auth0ClientId || '9XNj49jmScArNeqmyTxxcS6Idvikx97M';
+
+    if (domain && clientId) {
+      const redirectUri = window.location.origin;
+      const authUrl = `https://${domain}/authorize?client_id=${encodeURIComponent(
+        clientId
+      )}&response_type=token%20id_token&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&scope=openid%20profile%20email&nonce=${Math.random().toString(36).substring(7)}`;
+
+      window.location.href = authUrl;
+    }
+  };
+
   const loginAsAdmin = async () => {
     await login({
       email: 'sakekmasudparvez@gmail.com',
@@ -121,7 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginAsDemoUser = async () => {
-    // Ensure approved test user in DB
     try {
       await fetch('/api/admin/users/status', {
         method: 'POST',
@@ -136,7 +173,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: 'auth0|user_alex',
     });
 
-    // Make sure status is approved
     try {
       await fetch('/api/admin/users/status', {
         method: 'POST',
@@ -171,7 +207,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated,
         isPermitted,
         isAdmin,
+        auth0Domain,
+        auth0ClientId,
         login,
+        loginWithAuth0,
         loginAsAdmin,
         loginAsDemoUser,
         loginAsPendingUser,

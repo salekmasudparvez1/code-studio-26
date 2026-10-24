@@ -1,4 +1,4 @@
-import { defineConfig, Plugin } from "vite";
+import { defineConfig, loadEnv, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
 function apiMiddlewarePlugin(): Plugin {
@@ -56,10 +56,21 @@ function apiMiddlewarePlugin(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), apiMiddlewarePlugin()],
-  server: {
-    port: 3000,
-    open: false,
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const rawDomain = env.VITE_AUTH0_DOMAIN || env.AUTH0_DOMAIN || "";
+  const cleanDomain = rawDomain.replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim();
+  const clientId = env.VITE_AUTH0_CLIENT_ID || env.AUTH0_CLIENT_ID || "";
+
+  return {
+    plugins: [react(), apiMiddlewarePlugin()],
+    define: {
+      "import.meta.env.VITE_AUTH0_DOMAIN": JSON.stringify(cleanDomain),
+      "import.meta.env.VITE_AUTH0_CLIENT_ID": JSON.stringify(clientId),
+    },
+    server: {
+      port: 3000,
+      open: false,
+    },
+  };
 });

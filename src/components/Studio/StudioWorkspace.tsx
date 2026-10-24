@@ -202,3 +202,4 @@ export const StudioWorkspace: React.FC = () => {
     </div>
   );
 };
+

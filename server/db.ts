@@ -2,20 +2,30 @@ import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 
-let dbUrl = process.env.DATABASE_URL;
-
-if (!dbUrl) {
-  try {
-    const envPath = path.resolve(process.cwd(), '.env');
-    if (fs.existsSync(envPath)) {
-      const env = fs.readFileSync(envPath, 'utf8');
-      const match = env.match(/DATABASE_URL=([^\r\n]+)/);
-      if (match) dbUrl = match[1].trim();
-    }
-  } catch (e) {
-    // ignore
+// Load .env variables into process.env if not set
+try {
+  const envPath = path.resolve(process.cwd(), '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split(/\r?\n/).forEach((line) => {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let val = (match[2] || '').trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    });
   }
+} catch {
+  // ignore
 }
+
+let dbUrl = process.env.DATABASE_URL;
 
 export const pool = new pg.Pool({
   connectionString: dbUrl,

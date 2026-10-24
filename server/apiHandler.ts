@@ -23,6 +23,20 @@ export async function handleApiRequest(
   // Normalize path without trailing slash
   const path = urlPath.replace(/\/$/, '');
 
+  // 0. Auth0 Public Client Config: GET /api/auth/config
+  if (path === '/api/auth/config' && method === 'GET') {
+    const rawDomain = process.env.VITE_AUTH0_DOMAIN || process.env.AUTH0_DOMAIN || '';
+    const cleanDomain = rawDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+    const clientId = process.env.VITE_AUTH0_CLIENT_ID || process.env.AUTH0_CLIENT_ID || '';
+    return {
+      status: 200,
+      data: {
+        domain: cleanDomain,
+        clientId: clientId,
+      },
+    };
+  }
+
   // 1. Sync / Login User: POST /api/auth/sync
   if (path === '/api/auth/sync' && method === 'POST') {
     const { id, email, name, picture } = bodyData || {};
