@@ -103,8 +103,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user?.email]);
 
-  // Sync on initial mount
+  // Check for Auth0 response in URL hash or search params on mount
   useEffect(() => {
+    // 1. Implicit Grant / Token in Hash: #access_token=...&id_token=...
+    if (window.location.hash && (window.location.hash.includes("id_token=") || window.location.hash.includes("access_token="))) {
+      try {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const idToken = hashParams.get("id_token");
+
+        if (idToken) {
+          const base64Url = idToken.split(".")[1];
+          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+          const jsonPayload = decodeURIComponent(
+            atob(base64)
+              .split("")
+              .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+              .join("")
+          );
+          const payload = JSON.parse(jsonPayload);
+
+          if (payload && payload.email) {
+            setIsLoading(true);
+            fetch("/api/auth/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: payload.sub || `auth0|${Date.now()}`,
+                email: payload.email,
+                name: payload.name || payload.nickname || payload.email.split("@")[0],
+                picture: payload.picture || null,
+              }),
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.user) {
+                  setUser(data.user);
+                  localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data.user));
+                  if (data.token) {
+                    setToken(data.token);
+                    localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, data.token);
+                  }
+                }
+              })
+              .catch((err) => console.error("Error syncing Auth0 profile with PostgreSQL:", err))
+              .finally(() => {
+                setIsLoading(false);
+                window.history.replaceState({}, document.title, window.location.pathname);
+              });
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse Auth0 hash token:", err);
+      }
+    }
+
+    // 2. Sync on initial mount if already stored
     if (user?.email) {
       refreshUser().finally(() => setIsLoading(false));
     } else {
