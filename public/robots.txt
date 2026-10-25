@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://code-animation-26.vercel.app/sitemap.xml
+Sitemap: https://code-studio-26.vercel.app/sitemap.xml
 
