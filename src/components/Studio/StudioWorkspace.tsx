@@ -1,9 +1,17 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import { FpsOption } from "../../types/animation";
 import { CellType, GraphType } from "../../types/cell";
+import { OverlayPatch } from "../../types/overlay";
 import { useProjectCells } from "../../hooks/useProjectCells";
 import { useAnimationPlayback } from "../../hooks/useAnimationPlayback";
 import { useMediaRecorder } from "../../hooks/useMediaRecorder";
+import { useOverlays } from "../../hooks/useOverlays";
 import {
   getTotalDuration,
   getTotalCharCount,
@@ -12,8 +20,14 @@ import {
   getCellAtTime,
 } from "../../utils/duration";
 import { clamp } from "../../utils/math";
+import { reorderOverlays } from "../../utils/overlays";
+import {
+  parseProject,
+  readStoredProject,
+  serializeProject,
+  writeStoredProject,
+} from "../../utils/projectFile";
 
-import { Header } from "../Header/Header";
 import { Sidebar } from "../Sidebar/Sidebar";
 import { MainPanel } from "../MainPanel/MainPanel";
 import {
@@ -22,18 +36,29 @@ import {
   ExportSettings,
 } from "../../hooks/useMediaRecorder";
 
+const storedProject =
+  typeof window !== "undefined" ? readStoredProject() : null;
+
 export const StudioWorkspace: React.FC = () => {
-  const [speed, setSpeed] = useState<number>(18);
-  const [fps, setFps] = useState<FpsOption>(30);
-  const [exportFormat, setExportFormat] = useState<ExportFormat>("mp4");
-  const [exportResolution, setExportResolution] =
-    useState<ExportResolution>("1080p");
-  const [exportFps, setExportFps] = useState(30);
+  const [speed, setSpeed] = useState<number>(
+    storedProject?.settings.speed ?? 18,
+  );
+  const [fps, setFps] = useState<FpsOption>(storedProject?.settings.fps ?? 30);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>(
+    storedProject?.settings.exportFormat ?? "mp4",
+  );
+  const [exportResolution, setExportResolution] = useState<ExportResolution>(
+    storedProject?.settings.exportResolution ?? "1080p",
+  );
+  const [exportFps, setExportFps] = useState(
+    storedProject?.settings.exportFps ?? 30,
+  );
+  const [projectError, setProjectError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Project cells state
   const {
     cells,
+    setCells,
     activeCellId,
     activeCell,
     setActiveCellId,
@@ -42,13 +67,33 @@ export const StudioWorkspace: React.FC = () => {
     moveCell,
     deleteCell,
     importCells,
-  } = useProjectCells();
+  } = useProjectCells(storedProject?.cells);
 
-  // Calculated animation metrics
+  const {
+    overlays,
+    selectedId,
+    selectedOverlay,
+    tool,
+    drawStyle,
+    error: overlayError,
+    canUndo,
+    canRedo,
+    setTool,
+    setDrawStyle,
+    setSelectedId,
+    addOverlay,
+    updateOverlay,
+    updateOverlayLive,
+    commitCurrent,
+    deleteOverlay,
+    replaceAll,
+    undo,
+    redo,
+  } = useOverlays(storedProject?.overlays ?? []);
+
   const totalDuration = getTotalDuration(cells);
   const totalChars = getTotalCharCount(cells);
 
-  // Playback hook
   const {
     currentTime,
     setCurrentTime,
@@ -60,7 +105,6 @@ export const StudioWorkspace: React.FC = () => {
     pause,
   } = useAnimationPlayback({ totalDuration });
 
-  // Media recorder hook
   const {
     isRecording,
     isPaused: isRecordingPaused,
@@ -73,6 +117,7 @@ export const StudioWorkspace: React.FC = () => {
   } = useMediaRecorder({
     canvasRef,
     cells,
+    overlays,
     totalDuration,
     fps,
     onTimeUpdate: setCurrentTime,
@@ -83,7 +128,25 @@ export const StudioWorkspace: React.FC = () => {
     },
   });
 
-  // Handler for selecting a cell from the layers sidebar and instantly previewing it on the canvas
+  const projectSnapshot = useMemo(
+    () => ({
+      cells,
+      overlays,
+      settings: {
+        speed,
+        fps,
+        exportFormat,
+        exportResolution,
+        exportFps,
+      },
+    }),
+    [cells, overlays, speed, fps, exportFormat, exportResolution, exportFps],
+  );
+
+  useEffect(() => {
+    writeStoredProject(projectSnapshot);
+  }, [projectSnapshot]);
+
   const handleSelectCell = useCallback(
     (cellId: string, jumpToStart = false) => {
       setActiveCellId(cellId);
@@ -118,7 +181,6 @@ export const StudioWorkspace: React.FC = () => {
     [cells, totalDuration, pause, seek, setActiveCellId],
   );
 
-  // Handler for adding a cell and immediately navigating the preview to it
   const handleAddCell = useCallback(
     (type: CellType, graphType?: GraphType) => {
       const newCell = addCell(type, graphType);
@@ -145,7 +207,6 @@ export const StudioWorkspace: React.FC = () => {
     [addCell, cells, pause, seek],
   );
 
-  // Keep activeCellId synchronized with timeline scrubbing and playback
   useEffect(() => {
     const currentResult = getCellAtTime(cells, currentTime);
     if (currentResult && currentResult.cell.id !== activeCellId) {
@@ -153,12 +214,105 @@ export const StudioWorkspace: React.FC = () => {
     }
   }, [currentTime, cells, activeCellId, setActiveCellId]);
 
+  const handleOverlayTiming = useCallback(
+    (id: string, startTime: number, endTime: number, commit = true) => {
+      const patch: OverlayPatch = { startTime, endTime };
+      if (commit) updateOverlay(id, patch);
+      else updateOverlayLive(id, patch);
+    },
+    [updateOverlay, updateOverlayLive],
+  );
+
+  const handleReorderOverlays = useCallback(
+    (fromId: string, toId: string) => {
+      replaceAll(reorderOverlays(overlays, fromId, toId));
+    },
+    [overlays, replaceAll],
+  );
+
+  const handleSaveProject = useCallback(() => {
+    try {
+      const blob = new Blob([serializeProject(projectSnapshot)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "code-studio-project.json";
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      setProjectError(null);
+    } catch (error) {
+      setProjectError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save the project file.",
+      );
+    }
+  }, [projectSnapshot]);
+
+  const handleLoadProject = useCallback(
+    async (file: File) => {
+      try {
+        const project = parseProject(await file.text());
+        setCells(project.cells);
+        setActiveCellId(project.cells[0]?.id ?? null);
+        replaceAll(project.overlays, false);
+        setSpeed(project.settings.speed);
+        setFps(project.settings.fps);
+        setExportFormat(project.settings.exportFormat);
+        setExportResolution(project.settings.exportResolution);
+        setExportFps(project.settings.exportFps);
+        setProjectError(null);
+        reset();
+      } catch (error) {
+        setProjectError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load the project file.",
+        );
+      }
+    },
+    [replaceAll, reset, setActiveCellId, setCells],
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isEditingText =
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT" ||
+        target?.isContentEditable ||
+        (target?.tagName === "INPUT" &&
+          (target as HTMLInputElement).type !== "range");
+      if (isEditingText) return;
+
+      const key = event.key.toLowerCase();
+      if ((event.ctrlKey || event.metaKey) && key === "z") {
+        event.preventDefault();
+        if (event.shiftKey) redo();
+        else undo();
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && key === "y") {
+        event.preventDefault();
+        redo();
+        return;
+      }
+      if ((event.key === "Delete" || event.key === "Backspace") && selectedId) {
+        event.preventDefault();
+        deleteOverlay(selectedId);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deleteOverlay, redo, selectedId, undo]);
+
   const currentFrame = Math.floor(currentTime * fps);
   const visibleChars = getVisibleCharCount(cells, currentTime);
 
   return (
     <div className="app-container">
-      <Header />
       <div className="app-workspace">
         <Sidebar
           cells={cells}
@@ -180,6 +334,16 @@ export const StudioWorkspace: React.FC = () => {
             importCells(importedCells);
             reset();
           }}
+          overlays={overlays}
+          selectedOverlayId={selectedId}
+          selectedOverlay={selectedOverlay}
+          onSelectOverlay={setSelectedId}
+          onUpdateOverlay={updateOverlay}
+          onDeleteOverlay={deleteOverlay}
+          onReorderOverlays={handleReorderOverlays}
+          onSaveProject={handleSaveProject}
+          onLoadProject={handleLoadProject}
+          projectError={projectError}
           onSpeedChange={setSpeed}
           onFpsChange={setFps}
           onTogglePlay={togglePlay}
@@ -208,6 +372,13 @@ export const StudioWorkspace: React.FC = () => {
         <MainPanel
           canvasRef={canvasRef}
           cells={cells}
+          overlays={overlays}
+          selectedOverlayId={selectedId}
+          overlayTool={tool}
+          overlayStyle={drawStyle}
+          canUndoOverlay={canUndo}
+          canRedoOverlay={canRedo}
+          overlayError={overlayError}
           currentTime={currentTime}
           totalDuration={totalDuration}
           currentFrame={currentFrame}
@@ -219,6 +390,18 @@ export const StudioWorkspace: React.FC = () => {
           isPlaying={isPlaying}
           onTogglePlay={togglePlay}
           onReset={reset}
+          onOverlayToolChange={setTool}
+          onOverlayStyleChange={(updates) =>
+            setDrawStyle((current) => ({ ...current, ...updates }))
+          }
+          onSelectOverlay={setSelectedId}
+          onAddOverlay={addOverlay}
+          onDeleteOverlay={deleteOverlay}
+          onLiveOverlayUpdate={updateOverlayLive}
+          onCommitOverlay={commitCurrent}
+          onUndoOverlay={undo}
+          onRedoOverlay={redo}
+          onOverlayTimingChange={handleOverlayTiming}
         />
       </div>
     </div>

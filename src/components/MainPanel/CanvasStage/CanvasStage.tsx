@@ -9,13 +9,23 @@ import {
   SkipForward,
 } from "lucide-react";
 import { Cell } from "../../../types/cell";
+import { Overlay, OverlayDrawStyle, OverlayPatch, OverlayTool } from "../../../types/overlay";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "../../../constants/defaults";
 import { renderCanvasStage } from "../../../utils/canvasRenderer";
 import { formatTime } from "../../../utils/time";
+import { OverlayToolbar } from "../OverlayEditor/OverlayToolbar";
+import { OverlayHitLayer } from "../OverlayEditor/OverlayHitLayer";
 
 interface CanvasStageProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   cells: Cell[];
+  overlays: Overlay[];
+  selectedOverlayId: string | null;
+  overlayTool: OverlayTool;
+  overlayStyle: OverlayDrawStyle;
+  canUndoOverlay: boolean;
+  canRedoOverlay: boolean;
+  overlayError: string | null;
   currentTime: number;
   fps: number;
   totalDuration: number;
@@ -24,11 +34,27 @@ interface CanvasStageProps {
   onReset: () => void;
   onSeek: (time: number) => void;
   onStep: (delta: number) => void;
+  onOverlayToolChange: (tool: OverlayTool) => void;
+  onOverlayStyleChange: (updates: Partial<OverlayDrawStyle>) => void;
+  onSelectOverlay: (id: string | null) => void;
+  onAddOverlay: (overlay: Overlay) => void;
+  onDeleteOverlay: (id: string) => void;
+  onLiveOverlayUpdate: (id: string, updates: OverlayPatch) => void;
+  onCommitOverlay: () => void;
+  onUndoOverlay: () => void;
+  onRedoOverlay: () => void;
 }
 
 export const CanvasStage: React.FC<CanvasStageProps> = ({
   canvasRef,
   cells,
+  overlays,
+  selectedOverlayId,
+  overlayTool,
+  overlayStyle,
+  canUndoOverlay,
+  canRedoOverlay,
+  overlayError,
   currentTime,
   fps,
   totalDuration,
@@ -37,12 +63,22 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
   onReset,
   onSeek,
   onStep,
+  onOverlayToolChange,
+  onOverlayStyleChange,
+  onSelectOverlay,
+  onAddOverlay,
+  onDeleteOverlay,
+  onLiveOverlayUpdate,
+  onCommitOverlay,
+  onUndoOverlay,
+  onRedoOverlay,
 }) => {
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const activeCanvasRef = canvasRef || internalRef;
   const previewRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [draftOverlay, setDraftOverlay] = useState<Overlay | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetHideTimer = useCallback(() => {
@@ -125,8 +161,9 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
   useEffect(() => {
     const canvas = activeCanvasRef.current;
     if (!canvas) return;
-    renderCanvasStage(canvas, cells, currentTime, fps);
-  }, [activeCanvasRef, cells, currentTime, fps]);
+    const previewOverlays = draftOverlay ? [...overlays, draftOverlay] : overlays;
+    renderCanvasStage(canvas, cells, currentTime, fps, previewOverlays);
+  }, [activeCanvasRef, cells, overlays, draftOverlay, currentTime, fps]);
 
   const containerClassName = [
     "preview-container",
@@ -156,13 +193,47 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
         </button>
       )}
 
-      <canvas
-        ref={activeCanvasRef}
-        id="stage"
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        aria-label="Code animation preview"
+      <OverlayToolbar
+        tool={overlayTool}
+        drawStyle={overlayStyle}
+        canUndo={canUndoOverlay}
+        canRedo={canRedoOverlay}
+        onToolChange={onOverlayToolChange}
+        onStyleChange={onOverlayStyleChange}
+        onUndo={onUndoOverlay}
+        onRedo={onRedoOverlay}
       />
+      {overlayError && (
+        <div className="overlay-error" role="alert">
+          {overlayError}
+        </div>
+      )}
+
+      <div className="preview-stage-wrap">
+        <canvas
+          ref={activeCanvasRef}
+          id="stage"
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          aria-label="Code animation preview"
+        />
+        <OverlayHitLayer
+          canvasRef={activeCanvasRef}
+          overlays={overlays}
+          selectedId={selectedOverlayId}
+          tool={overlayTool}
+          drawStyle={overlayStyle}
+          currentTime={currentTime}
+          totalDuration={totalDuration}
+          onSelect={onSelectOverlay}
+          onAdd={onAddOverlay}
+          onDelete={onDeleteOverlay}
+          onLiveUpdate={onLiveOverlayUpdate}
+          onCommit={onCommitOverlay}
+          onDraftChange={setDraftOverlay}
+          onToolChange={onOverlayToolChange}
+        />
+      </div>
 
       <div className="preview-player-controls" aria-label="Preview video controls">
         <button

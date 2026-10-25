@@ -6,6 +6,7 @@
 @import './layers.css';
 @import './inspector.css';
 @import './canvas.css';
+@import './overlays.css';
 @import './timeline.css';
 @import './components.css';
 @import './landing.css';

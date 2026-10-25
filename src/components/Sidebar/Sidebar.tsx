@@ -1,7 +1,10 @@
 import React from 'react';
 import { Cell, CellType, GraphType } from '../../types/cell';
+import { Overlay, OverlayPatch } from '../../types/overlay';
 import { FpsOption } from '../../types/animation';
 import { CellList } from './ProjectCells/CellList';
+import { OverlayList } from './Overlays/OverlayList';
+import { OverlayInspector } from './Overlays/OverlayInspector';
 import { CellInspector } from './Inspector/CellInspector';
 import { GlobalSettings } from './GlobalSettings/GlobalSettings';
 import { QuickStats } from './QuickStats/QuickStats';
@@ -32,6 +35,16 @@ interface SidebarProps {
   onStopRecord: () => void;
   isRecordingPaused: boolean;
   onToggleRecordPause: () => void;
+  overlays: Overlay[];
+  selectedOverlayId: string | null;
+  selectedOverlay: Overlay | null;
+  onSelectOverlay: (id: string | null) => void;
+  onUpdateOverlay: (id: string, updates: OverlayPatch) => void;
+  onDeleteOverlay: (id: string) => void;
+  onReorderOverlays: (fromId: string, toId: string) => void;
+  onSaveProject: () => void;
+  onLoadProject: (file: File) => Promise<void>;
+  projectError: string | null;
   onAutoExport: (settings: { format: ExportFormat; resolution: ExportResolution; fps: number }) => void;
   exportFormat: ExportFormat;
   exportResolution: ExportResolution;
@@ -68,6 +81,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onStopRecord,
   isRecordingPaused,
   onToggleRecordPause,
+  overlays,
+  selectedOverlayId,
+  selectedOverlay,
+  onSelectOverlay,
+  onUpdateOverlay,
+  onDeleteOverlay,
+  onReorderOverlays,
+  onSaveProject,
+  onLoadProject,
+  projectError,
   onAutoExport,
   exportFormat,
   exportResolution,
@@ -88,6 +111,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onMoveCell={onMoveCell}
         onDeleteCell={onDeleteCell}
         onImportCells={onImportCells}
+      />
+
+      <OverlayList
+        overlays={overlays}
+        selectedId={selectedOverlayId}
+        onSelect={onSelectOverlay}
+        onUpdate={onUpdateOverlay}
+        onDelete={onDeleteOverlay}
+        onReorder={onReorderOverlays}
+      />
+
+      <OverlayInspector
+        overlay={selectedOverlay}
+        totalDuration={totalDuration}
+        onChange={onUpdateOverlay}
       />
 
       <CellInspector activeCell={activeCell} onUpdateCell={onUpdateCell} />
@@ -114,6 +152,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onExportFpsChange={onExportFpsChange}
         isAutoExporting={isAutoExporting}
         exportProgress={exportProgress}
+        onSaveProject={onSaveProject}
+        onLoadProject={onLoadProject}
+        projectError={projectError}
       />
 
       <QuickStats

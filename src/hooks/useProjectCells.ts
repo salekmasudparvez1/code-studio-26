@@ -16,10 +16,11 @@ import {
   createGradientDescentCell,
 } from '../constants/defaults';
 
-export function useProjectCells(initialCells: Cell[] = INITIAL_CELLS) {
-  const [cells, setCells] = useState<Cell[]>(initialCells);
+export function useProjectCells(initialCells: Cell[] | undefined = INITIAL_CELLS) {
+  const startingCells = initialCells && initialCells.length > 0 ? initialCells : INITIAL_CELLS;
+  const [cells, setCells] = useState<Cell[]>(startingCells);
   const [activeCellId, setActiveCellId] = useState<string | null>(
-    () => initialCells[0]?.id || null
+    () => startingCells[0]?.id || null
   );
 
   const activeCell = cells.find((c) => c.id === activeCellId) || null;

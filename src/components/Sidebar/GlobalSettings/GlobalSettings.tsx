@@ -31,6 +31,9 @@ interface GlobalSettingsProps {
   onExportFormatChange: (format: ExportFormat) => void;
   onExportResolutionChange: (resolution: ExportResolution) => void;
   onExportFpsChange: (fps: number) => void;
+  onSaveProject: () => void;
+  onLoadProject: (file: File) => Promise<void>;
+  projectError: string | null;
 }
 
 export const GlobalSettings: React.FC<GlobalSettingsProps> = ({
@@ -55,6 +58,9 @@ export const GlobalSettings: React.FC<GlobalSettingsProps> = ({
   onExportFormatChange,
   onExportResolutionChange,
   onExportFpsChange,
+  onSaveProject,
+  onLoadProject,
+  projectError,
 }) => {
   return (
     <div className="sidebar-section">
@@ -132,6 +138,29 @@ export const GlobalSettings: React.FC<GlobalSettingsProps> = ({
         />
 
         <ExportNotice />
+
+        <div className="project-file-actions">
+          <button type="button" className="btn btn-sm" onClick={onSaveProject}>
+            Save Project
+          </button>
+          <label className="btn btn-sm project-load-button">
+            Load Project
+            <input
+              type="file"
+              accept=".json,application/json"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                if (file) void onLoadProject(file);
+              }}
+            />
+          </label>
+        </div>
+        {projectError && (
+          <div className="notebook-import-error" role="alert">
+            {projectError}
+          </div>
+        )}
       </Card>
     </div>
   );

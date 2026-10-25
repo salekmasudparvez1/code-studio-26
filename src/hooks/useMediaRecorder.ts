@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Cell } from '../types/cell';
+import { Overlay } from '../types/overlay';
 import { renderCanvasStage } from '../utils/canvasRenderer';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
@@ -7,6 +8,7 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util';
 interface UseMediaRecorderOptions {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   cells: Cell[];
+  overlays?: Overlay[];
   totalDuration: number;
   fps: number;
   onTimeUpdate: (time: number) => void;
@@ -47,6 +49,7 @@ async function convertWebmToMp4(webm: Blob): Promise<Blob> {
 export function useMediaRecorder({
   canvasRef,
   cells,
+  overlays = [],
   totalDuration,
   fps,
   onTimeUpdate,
@@ -65,6 +68,10 @@ export function useMediaRecorder({
   const elapsedBeforePauseRef = useRef(0);
   const startedAtRef = useRef(0);
   const recordFrameRef = useRef<((now: number) => void) | null>(null);
+  const cellsRef = useRef(cells);
+  const overlaysRef = useRef(overlays);
+  cellsRef.current = cells;
+  overlaysRef.current = overlays;
 
   const stopRecording = useCallback(() => {
     if (recorderRef.current && recorderRef.current.state !== 'inactive') {
@@ -207,7 +214,13 @@ export function useMediaRecorder({
         const currentT = Math.min(t, duration);
 
         if (renderPreview) onTimeUpdate(currentT);
-        renderCanvasStage(canvas, cells, currentT, settings.fps);
+        renderCanvasStage(
+          canvas,
+          cellsRef.current,
+          currentT,
+          settings.fps,
+          overlaysRef.current
+        );
 
         if (!renderPreview) {
           setExportProgress(
@@ -233,7 +246,7 @@ export function useMediaRecorder({
       startedAtRef.current = performance.now();
       frameLoopRef.current = requestAnimationFrame(recordFrame);
     },
-    [canvasRef, cells, totalDuration, fps, onTimeUpdate, onRecordingStateChange]
+    [canvasRef, cells, overlays, totalDuration, fps, onTimeUpdate, onRecordingStateChange]
   );
 
   const autoExport = useCallback(

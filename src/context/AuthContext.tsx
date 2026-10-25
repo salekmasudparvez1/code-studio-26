@@ -446,7 +446,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth0Domain, auth0ClientId]);
 
-  // 9. Delete My Account
+  // 9. Sign Out
+  const logout = useCallback(() => {
+    if (user?.email) {
+      fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email }),
+      }).catch(() => {});
+    }
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
+    localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
+  }, [user?.email]);
+
+  // 10. Delete My Account
   const deleteMyAccount = useCallback(async () => {
     if (!user?.email) return;
     const res = await fetch("/api/auth/delete-account", {
@@ -462,21 +477,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(err.error || "Failed to delete account");
     }
   }, [user?.email, logout]);
-
-  // 10. Sign Out
-  const logout = useCallback(() => {
-    if (user?.email) {
-      fetch("/api/auth/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email }),
-      }).catch(() => {});
-    }
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
-    localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
-  }, [user?.email]);
 
   const isAuthenticated = !!user;
   const isAdmin = !!user && user.role === "ADMIN";

@@ -155,6 +155,26 @@ server.listen(4567, async () => {
     await canvas.waitFor();
     console.log('Canvas is present in Studio');
 
+    // Overlay editor: add a text overlay without changing project cells
+    const overlayToolbar = page.getByRole('toolbar', { name: 'Video overlay tools' });
+    await overlayToolbar.waitFor();
+    await page.getByRole('button', { name: 'Text', exact: true }).click();
+    const canvasBox = await canvas.boundingBox();
+    if (!canvasBox) {
+      throw new Error('Canvas bounding box missing for overlay click');
+    }
+    await page.mouse.click(canvasBox.x + canvasBox.width * 0.55, canvasBox.y + canvasBox.height * 0.28);
+    await page.waitForTimeout(150);
+    const overlayItems = page.locator('.overlay-list-item');
+    const overlayCount = await overlayItems.count();
+    console.log('Overlay layer count after adding text:', overlayCount);
+    if (overlayCount !== 1) {
+      throw new Error(`Expected 1 overlay, got ${overlayCount}`);
+    }
+    const overlayName = page.locator('.overlay-list-copy strong').first();
+    await overlayName.waitFor();
+    console.log('Overlay name verified:', await overlayName.innerText());
+
     // Verify Cells List contains initial 7 cells with Photoshop layer styling
     const cellItems = page.locator('.cell-item');
     const initialCellCount = await cellItems.count();

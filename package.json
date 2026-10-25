@@ -31,7 +31,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types test-react-app.mjs"
+    "test": "node --experimental-strip-types test-overlays.mjs && node --experimental-strip-types test-react-app.mjs"
   },
   "devEngines": {
     "packageManager": {

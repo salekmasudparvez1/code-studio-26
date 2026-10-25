@@ -12,6 +12,8 @@ import { drawLstm } from './renderers/lstmRenderer';
 import { drawYolo } from './renderers/yoloRenderer';
 import { drawMatplotlib } from './renderers/matplotlibRenderer';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants/defaults';
+import { Overlay } from '../types/overlay';
+import { drawOverlays } from './renderers/overlayRenderer';
 
 export function drawRoundRect(
   ctx: CanvasRenderingContext2D,
@@ -659,7 +661,8 @@ export function renderCanvasStage(
   canvas: HTMLCanvasElement,
   cells: Cell[],
   globalTime: number,
-  fps: number
+  fps: number,
+  overlays: Overlay[] = []
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -674,6 +677,7 @@ export function renderCanvasStage(
   const result = getCellAtTime(cells, globalTime);
   if (!result) {
     ctx.clearRect(0, 0, w, h);
+    drawOverlays(ctx, overlays, globalTime);
     return;
   }
 
@@ -706,4 +710,7 @@ export function renderCanvasStage(
 
   // 4. Bottom status bar
   drawStatusBar(ctx, w, h, globalTime, fps);
+
+  // 5. Non-destructive overlays (preview + export share this pass)
+  drawOverlays(ctx, overlays, globalTime);
 }
