@@ -9,7 +9,12 @@ import {
   SkipForward,
 } from "lucide-react";
 import { Cell } from "../../../types/cell";
-import { Overlay, OverlayDrawStyle, OverlayPatch, OverlayTool } from "../../../types/overlay";
+import {
+  Overlay,
+  OverlayDrawStyle,
+  OverlayPatch,
+  OverlayTool,
+} from "../../../types/overlay";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "../../../constants/defaults";
 import { renderCanvasStage } from "../../../utils/canvasRenderer";
 import { formatTime } from "../../../utils/time";
@@ -114,7 +119,8 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
       setIsFullscreen(document.fullscreenElement === previewRef.current);
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   const toggleFullscreen = async () => {
@@ -141,7 +147,8 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
         target?.tagName === "TEXTAREA" ||
         target?.tagName === "SELECT" ||
         target?.isContentEditable ||
-        (target?.tagName === "INPUT" && (target as HTMLInputElement).type !== "range");
+        (target?.tagName === "INPUT" &&
+          (target as HTMLInputElement).type !== "range");
 
       if (isEditingText) return;
 
@@ -161,7 +168,9 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
   useEffect(() => {
     const canvas = activeCanvasRef.current;
     if (!canvas) return;
-    const previewOverlays = draftOverlay ? [...overlays, draftOverlay] : overlays;
+    const previewOverlays = draftOverlay
+      ? [...overlays, draftOverlay]
+      : overlays;
     renderCanvasStage(canvas, cells, currentTime, fps, previewOverlays);
   }, [activeCanvasRef, cells, overlays, draftOverlay, currentTime, fps]);
 
@@ -235,7 +244,10 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
         />
       </div>
 
-      <div className="preview-player-controls" aria-label="Preview video controls">
+      <div
+        className="preview-player-controls"
+        aria-label="Preview video controls"
+      >
         <button
           type="button"
           className="preview-ctrl-btn"
@@ -295,7 +307,11 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
           type="button"
           className="preview-ctrl-btn"
           onClick={toggleFullscreen}
-          title={isFullscreen ? "Exit fullscreen (Esc / F)" : "Preview fullscreen (F)"}
+          title={
+            isFullscreen
+              ? "Exit fullscreen (Esc / F)"
+              : "Preview fullscreen (F)"
+          }
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
         >
           {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}

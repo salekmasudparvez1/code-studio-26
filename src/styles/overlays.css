@@ -14,7 +14,7 @@
   height: auto;
 }
 
-.overlay-toolbar {
+/* .overlay-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -23,7 +23,7 @@
   background: #0b0e14;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-}
+} */
 
 .overlay-toolbar-group {
   display: flex;
@@ -95,6 +95,22 @@
   margin-top: 6px;
   font-size: 12px;
   color: #fca5a5;
+}
+
+.overlay-hit-layer {
+  pointer-events: auto;
+}
+
+/* whole layer clickable */
+.overlay-text-input {
+  pointer-events: auto;
+  touch-action: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.overlay-text-input:focus {
+  border-color: #4a9eff;
 }
 
 .overlay-hit-layer {
@@ -322,4 +338,242 @@
   .overlay-track {
     grid-template-columns: 1fr;
   }
+}
+
+.ps-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, #3a3a3a 0%, #2b2b2b 100%);
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 #4a4a4a, 0 2px 6px rgba(0, 0, 0, 0.5);
+  color: #d6d6d6;
+  font: 11px/1.2 -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.ps-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ps-style {
+  gap: 10px;
+}
+
+.ps-divider {
+  width: 1px;
+  height: 22px;
+  background: linear-gradient(180deg, transparent, #111, transparent);
+  margin: 0 4px;
+}
+
+.ps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: #cfcfcf;
+  background: linear-gradient(180deg, #4a4a4a, #383838);
+  border: 1px solid #1f1f1f;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+}
+
+.ps-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #5a5a5a, #454545);
+  color: #fff;
+}
+
+.ps-btn.is-active {
+  background: linear-gradient(180deg, #2f6fb5, #1f548f);
+  border-color: #0f3a68;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(120, 180, 255, 0.45),
+    0 0 6px rgba(60, 140, 240, 0.55);
+}
+
+.ps-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ps-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ps-field-size {
+  min-width: 110px;
+}
+
+.ps-label {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9a9a9a;
+}
+
+.ps-swatch-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Hide native chrome, show a flat inset swatch */
+.ps-swatch-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #111;
+  border-radius: 3px;
+  background: #1a1a1a;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px #444;
+}
+
+.ps-swatch-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.ps-swatch-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.ps-swatch-input::-moz-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.ps-field.is-transparent .ps-swatch-input {
+  background:
+    linear-gradient(45deg, #444 25%, transparent 25%),
+    linear-gradient(-45deg, #444 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #444 75%),
+    linear-gradient(-45deg, transparent 75%, #444 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+.ps-none-btn {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid #111;
+  border-radius: 50%;
+  background: #555;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.ps-none-btn.is-on {
+  background: #c0392b;
+  color: #fff;
+  border-color: #6d1f16;
+}
+
+.ps-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #1a1a1a, #555);
+  outline: none;
+}
+
+.ps-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ddd, #999);
+  border: 1px solid #222;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+.ps-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ddd, #999);
+  border: 1px solid #222;
+  cursor: pointer;
+}
+
+.ps-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  height: 22px;
+  min-width: 110px;
+  padding: 0 22px 0 6px;
+  /* room for custom caret */
+  font-size: 11px;
+  line-height: 20px;
+  color: #e6e6e6;
+
+  background-color: #333;
+  background-image:
+    /* custom caret */
+    linear-gradient(45deg, transparent 50%, #bbb 50%),
+    linear-gradient(135deg, #bbb 50%, transparent 50%),
+    /* chrome gradient */
+    linear-gradient(180deg, #3d3d3d, #2c2c2c);
+  background-position:
+    calc(100% - 11px) 9px,
+    /* caret left edge */
+    calc(100% - 7px) 9px,
+    /* caret right edge */
+    0 0;
+  background-size:
+    4px 4px,
+    4px 4px,
+    100% 100%;
+  background-repeat: no-repeat;
+
+  border: 1px solid #111;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+
+  /* keep caret out of text */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-select:hover {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #fff 50%),
+    linear-gradient(135deg, #fff 50%, transparent 50%),
+    linear-gradient(180deg, #4a4a4a, #333);
+}
+
+.ps-select:focus {
+  border-color: #2f6fb5;
+  box-shadow: 0 0 0 1px rgba(80, 150, 240, 0.6);
+}
+
+/* Dropdown list (Chrome/Edge/Firefox support these) */
+.ps-select option {
+  background: #2b2b2b;
+  color: #e6e6e6;
 }

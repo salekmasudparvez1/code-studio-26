@@ -1,20 +1,20 @@
 export type OverlayKind =
-  | 'text'
-  | 'path'
-  | 'arrow'
-  | 'ellipse'
-  | 'rect'
-  | 'highlight';
+  | "text"
+  | "path"
+  | "arrow"
+  | "ellipse"
+  | "rect"
+  | "highlight";
 
 export type OverlayTool =
-  | 'select'
-  | 'text'
-  | 'pen'
-  | 'arrow'
-  | 'ellipse'
-  | 'rect'
-  | 'highlight'
-  | 'eraser';
+  | "select"
+  | "text"
+  | "pen"
+  | "arrow"
+  | "ellipse"
+  | "rect"
+  | "highlight"
+  | "eraser";
 
 export interface Point {
   x: number;
@@ -41,7 +41,7 @@ interface OverlayBase {
 }
 
 export interface TextOverlay extends OverlayBase {
-  kind: 'text';
+  kind: "text";
   text: string;
   x: number;
   y: number;
@@ -53,21 +53,21 @@ export interface TextOverlay extends OverlayBase {
 }
 
 export interface PathOverlay extends OverlayBase {
-  kind: 'path';
+  kind: "path";
   points: Point[];
   stroke: string;
   strokeWidth: number;
 }
 
 export interface HighlightOverlay extends OverlayBase {
-  kind: 'highlight';
+  kind: "highlight";
   points: Point[];
   stroke: string;
   strokeWidth: number;
 }
 
 export interface ArrowOverlay extends OverlayBase {
-  kind: 'arrow';
+  kind: "arrow";
   x: number;
   y: number;
   x2: number;
@@ -77,7 +77,7 @@ export interface ArrowOverlay extends OverlayBase {
 }
 
 export interface EllipseOverlay extends OverlayBase {
-  kind: 'ellipse';
+  kind: "ellipse";
   x: number;
   y: number;
   width: number;
@@ -88,7 +88,7 @@ export interface EllipseOverlay extends OverlayBase {
 }
 
 export interface RectOverlay extends OverlayBase {
-  kind: 'rect';
+  kind: "rect";
   x: number;
   y: number;
   width: number;
@@ -117,12 +117,12 @@ export interface OverlayDrawStyle {
 }
 
 export const DEFAULT_OVERLAY_STYLE: OverlayDrawStyle = {
-  stroke: '#facc15',
+  stroke: "#facc15",
   strokeWidth: 6,
   fill: null,
-  color: '#ffffff',
-  background: 'rgba(15, 23, 42, 0.72)',
-  fontFamily: 'system-ui, sans-serif',
+  color: "#ffffff",
+  background: "rgba(15, 23, 42, 0.72)",
+  fontFamily: "system-ui, sans-serif",
   fontSize: 42,
 };
 
@@ -151,10 +151,22 @@ export type OverlayPatch = Partial<{
   strokeWidth: number;
   fill: string | null;
 }>;
+export interface OverlayFont {
+  value: string; // CSS font-family value used by the renderer
+  label: string; // shown in the dropdown
+}
 
-export const OVERLAY_FONTS = [
-  { value: 'system-ui, sans-serif', label: 'Sans' },
-  { value: 'Georgia, "Times New Roman", serif', label: 'Serif' },
-  { value: 'ui-monospace, Consolas, monospace', label: 'Mono' },
-  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+export const OVERLAY_FONTS: OverlayFont[] = [
+  { value: "Inter, system-ui, sans-serif", label: "Inter" },
+  { value: "Roboto, sans-serif", label: "Roboto" },
+  { value: '"Open Sans", sans-serif', label: "Open Sans" },
+  { value: "Lato, sans-serif", label: "Lato" },
+  { value: "Montserrat, sans-serif", label: "Montserrat" },
+  { value: "Poppins, sans-serif", label: "Poppins" },
+  { value: "Oswald, sans-serif", label: "Oswald" },
+  { value: "Playfair Display, serif", label: "Playfair Display" },
+  { value: "Merriweather, serif", label: "Merriweather" },
+  { value: '"Courier New", monospace', label: "Courier New" },
+  { value: '"Comic Sans MS", cursive', label: "Comic Sans" },
+  { value: "Impact, sans-serif", label: "Impact" },
 ];

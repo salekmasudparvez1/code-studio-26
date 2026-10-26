@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   ArrowUpRight,
   Circle,
@@ -10,8 +10,13 @@ import {
   Square,
   Type,
   Undo2,
-} from 'lucide-react';
-import { OverlayDrawStyle, OverlayTool, OVERLAY_FONTS } from '../../../types/overlay';
+  Ban,
+} from "lucide-react";
+import {
+  OverlayDrawStyle,
+  OverlayTool,
+  OVERLAY_FONTS,
+} from "../../../types/overlay";
 
 interface OverlayToolbarProps {
   tool: OverlayTool;
@@ -25,15 +30,40 @@ interface OverlayToolbarProps {
 }
 
 const TOOLS: { id: OverlayTool; label: string; icon: React.ReactNode }[] = [
-  { id: 'select', label: 'Select', icon: <MousePointer2 size={15} /> },
-  { id: 'text', label: 'Text', icon: <Type size={15} /> },
-  { id: 'pen', label: 'Draw', icon: <Pencil size={15} /> },
-  { id: 'arrow', label: 'Arrow', icon: <ArrowUpRight size={15} /> },
-  { id: 'ellipse', label: 'Circle', icon: <Circle size={15} /> },
-  { id: 'rect', label: 'Rectangle', icon: <Square size={15} /> },
-  { id: 'highlight', label: 'Highlight', icon: <Highlighter size={15} /> },
-  { id: 'eraser', label: 'Eraser', icon: <Eraser size={15} /> },
+  { id: "select", label: "Select (V)", icon: <MousePointer2 size={15} /> },
+  { id: "text", label: "Text (T)", icon: <Type size={15} /> },
+  { id: "pen", label: "Brush (B)", icon: <Pencil size={15} /> },
+  { id: "arrow", label: "Arrow (A)", icon: <ArrowUpRight size={15} /> },
+  { id: "ellipse", label: "Ellipse (E)", icon: <Circle size={15} /> },
+  { id: "rect", label: "Rectangle (R)", icon: <Square size={15} /> },
+  {
+    id: "highlight",
+    label: "Highlighter (H)",
+    icon: <Highlighter size={15} />,
+  },
+  { id: "eraser", label: "Eraser (X)", icon: <Eraser size={15} /> },
 ];
+
+/** input[type=color] only supports #RRGGBB. Normalize anything else. */
+const toHex = (value: string | undefined, fallback: string): string => {
+  if (!value) return fallback;
+  if (/^#[0-9a-fA-F]{6}$/.test(value)) return value;
+  if (/^#[0-9a-fA-F]{3}$/.test(value)) {
+    return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+  }
+  return fallback;
+};
+
+const isTransparent = (value: string | undefined): boolean => {
+  if (!value) return true;
+  const v = value.trim().toLowerCase();
+  return (
+    v === "transparent" ||
+    v === "none" ||
+    v === "rgba(0,0,0,0)" ||
+    v === "rgba(0, 0, 0, 0)"
+  );
+};
 
 export const OverlayToolbar: React.FC<OverlayToolbarProps> = ({
   tool,
@@ -45,14 +75,24 @@ export const OverlayToolbar: React.FC<OverlayToolbarProps> = ({
   onUndo,
   onRedo,
 }) => {
+  const strokeColor = toHex(drawStyle.stroke, "#facc15");
+  const fillColor = toHex(drawStyle.color ?? drawStyle.fill, "#ffffff");
+  const strokeTransparent = isTransparent(drawStyle.stroke);
+  const fillTransparent = isTransparent(drawStyle.color ?? drawStyle.fill);
+
   return (
-    <div className="overlay-toolbar" role="toolbar" aria-label="Video overlay tools">
-      <div className="overlay-toolbar-group">
+    <div
+      className="overlay-toolbar ps-toolbar"
+      role="toolbar"
+      aria-label="Video overlay tools"
+    >
+      {/* Tools */}
+      <div className="ps-group">
         {TOOLS.map((item) => (
           <button
             key={item.id}
             type="button"
-            className={`overlay-tool-btn ${tool === item.id ? 'is-active' : ''}`}
+            className={`ps-btn ${tool === item.id ? "is-active" : ""}`}
             title={item.label}
             aria-label={item.label}
             aria-pressed={tool === item.id}
@@ -63,53 +103,113 @@ export const OverlayToolbar: React.FC<OverlayToolbarProps> = ({
         ))}
       </div>
 
-      <div className="overlay-toolbar-group overlay-toolbar-style">
-        <label className="overlay-style-field">
-          <span>Color</span>
-          <input
-            type="color"
-            aria-label="Overlay stroke color"
-            value={drawStyle.stroke.startsWith('#') ? drawStyle.stroke : '#facc15'}
-            onChange={(event) =>
-              onStyleChange({
-                stroke: event.target.value,
-                color: event.target.value,
-              })
-            }
-          />
+      <div className="ps-divider" />
+
+      {/* Color / Fill / Size / Font */}
+      <div className="ps-group ps-style">
+        {/* Stroke color */}
+        <label
+          className={`ps-field ${strokeTransparent ? "is-transparent" : ""}`}
+        >
+          <span className="ps-label">Color</span>
+          <span className="ps-swatch-wrap">
+            <input
+              type="color"
+              className="ps-swatch-input"
+              aria-label="Overlay stroke color"
+              value={strokeColor}
+              onChange={(event) =>
+                onStyleChange({
+                  stroke: event.target.value,
+                  color: event.target.value,
+                })
+              }
+            />
+            <button
+              type="button"
+              className={`ps-none-btn ${strokeTransparent ? "is-on" : ""}`}
+              title={
+                strokeTransparent
+                  ? "Enable stroke color"
+                  : "Make stroke transparent"
+              }
+              aria-label="Toggle transparent stroke"
+              aria-pressed={strokeTransparent}
+              onClick={() =>
+                onStyleChange({
+                  stroke: strokeTransparent ? strokeColor : "transparent",
+                })
+              }
+            >
+              <Ban size={11} />
+            </button>
+          </span>
         </label>
-        <label className="overlay-style-field">
-          <span>Fill</span>
-          <input
-            type="color"
-            aria-label="Overlay fill color"
-            value={drawStyle.color.startsWith('#') ? drawStyle.color : '#ffffff'}
-            onChange={(event) =>
-              onStyleChange({
-                fill: event.target.value,
-                color: event.target.value,
-                background: event.target.value,
-              })
-            }
-          />
+
+        {/* Fill color */}
+        <label
+          className={`ps-field ${fillTransparent ? "is-transparent" : ""}`}
+        >
+          <span className="ps-label">Fill</span>
+          <span className="ps-swatch-wrap">
+            <input
+              type="color"
+              className="ps-swatch-input"
+              aria-label="Overlay fill color"
+              value={fillColor}
+              onChange={(event) =>
+                onStyleChange({
+                  fill: event.target.value,
+                  color: event.target.value,
+                  background: event.target.value,
+                })
+              }
+            />
+            <button
+              type="button"
+              className={`ps-none-btn ${fillTransparent ? "is-on" : ""}`}
+              title={
+                fillTransparent ? "Enable fill color" : "Make fill transparent"
+              }
+              aria-label="Toggle transparent fill"
+              aria-pressed={fillTransparent}
+              onClick={() =>
+                onStyleChange({
+                  fill: fillTransparent ? fillColor : "transparent",
+                  color: fillTransparent ? fillColor : "transparent",
+                  background: fillTransparent ? fillColor : "transparent",
+                })
+              }
+            >
+              <Ban size={11} />
+            </button>
+          </span>
         </label>
-        <label className="overlay-style-field overlay-style-size">
-          <span>Size</span>
+
+        <label className="ps-field ps-field-size">
+          <span className="ps-label">Size</span>
           <input
             type="range"
+            className="ps-range"
             min={2}
             max={72}
             value={drawStyle.strokeWidth}
             aria-label="Overlay stroke size"
-            onChange={(event) => onStyleChange({ strokeWidth: Number(event.target.value) })}
+            onChange={(event) =>
+              onStyleChange({ strokeWidth: Number(event.target.value) })
+            }
           />
         </label>
-        <label className="overlay-style-field">
-          <span>Font</span>
+
+        <label className="ps-field">
+          <span className="ps-label">Font</span>
           <select
+            className="ps-select"
             aria-label="Overlay font"
             value={drawStyle.fontFamily}
-            onChange={(event) => onStyleChange({ fontFamily: event.target.value })}
+            onChange={(event) =>
+              onStyleChange({ fontFamily: event.target.value })
+            }
           >
             {OVERLAY_FONTS.map((font) => (
               <option key={font.value} value={font.value}>
@@ -118,24 +218,31 @@ export const OverlayToolbar: React.FC<OverlayToolbarProps> = ({
             ))}
           </select>
         </label>
-        <label className="overlay-style-field overlay-style-size">
-          <span>Type</span>
+
+        <label className="ps-field ps-field-size">
+          <span className="ps-label">Type</span>
           <input
             type="range"
+            className="ps-range"
             min={16}
             max={96}
             value={drawStyle.fontSize}
             aria-label="Overlay font size"
-            onChange={(event) => onStyleChange({ fontSize: Number(event.target.value) })}
+            onChange={(event) =>
+              onStyleChange({ fontSize: Number(event.target.value) })
+            }
           />
         </label>
       </div>
 
-      <div className="overlay-toolbar-group">
+      <div className="ps-divider" />
+
+      {/* Undo / Redo */}
+      <div className="ps-group">
         <button
           type="button"
-          className="overlay-tool-btn"
-          title="Undo overlay edit (Ctrl+Z)"
+          className="ps-btn"
+          title="Undo (Ctrl+Z)"
           aria-label="Undo overlay edit"
           disabled={!canUndo}
           onClick={onUndo}
@@ -144,8 +251,8 @@ export const OverlayToolbar: React.FC<OverlayToolbarProps> = ({
         </button>
         <button
           type="button"
-          className="overlay-tool-btn"
-          title="Redo overlay edit (Ctrl+Shift+Z)"
+          className="ps-btn"
+          title="Redo (Ctrl+Shift+Z)"
           aria-label="Redo overlay edit"
           disabled={!canRedo}
           onClick={onRedo}
