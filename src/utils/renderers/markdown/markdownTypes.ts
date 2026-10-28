@@ -31,6 +31,7 @@ export interface MarkdownVisualLine {
   tableCells?: TableCell[];
   imageSrc?: string;
   imageAlt?: string;
+  height?: number; // For images to track their actual rendered height
 }
 
 export interface RichTextStyle {

@@ -58,13 +58,13 @@ export function luminance(color: string): number | null {
 export function isLightColor(color?: string): boolean {
   if (!color) return false;
   const lum = luminance(color);
-  return lum !== null && lum >= 0.55;
+  return lum !== null && lum >= 0.5;
 }
 
 export function isDarkColor(color?: string): boolean {
   if (!color) return false;
   const lum = luminance(color);
-  return lum !== null && lum < 0.45;
+  return lum !== null && lum < 0.5;
 }
 
 export function borderAccent(borderLeft?: string): string | undefined {

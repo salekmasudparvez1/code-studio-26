@@ -73,6 +73,8 @@ function classifyLine(rawLine: string, box?: CalloutBox): MarkdownVisualLine {
 
   const mdImage = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
   const htmlImage = trimmed.match(/^<img\b([^>]*)\/?\s*>$/i);
+  const inlineMdImage = trimmed.match(/!\[([^\]]*)\]\((data:image\/[a-zA-Z0-9.+-]+;base64,[^\s)]+)\)/);
+
   if (mdImage) {
     return {
       text: mdImage[1],
@@ -81,6 +83,16 @@ function classifyLine(rawLine: string, box?: CalloutBox): MarkdownVisualLine {
       imageAlt: mdImage[1],
       box,
     };
+  }
+  if (inlineMdImage) {
+    // Extract inline base64 image and return as image line
+    const alt = inlineMdImage[1];
+    const src = inlineMdImage[2];
+    const matchIndex = inlineMdImage.index ?? 0;
+    const beforeImage = trimmed.substring(0, matchIndex);
+    const afterImage = trimmed.substring(matchIndex + inlineMdImage[0].length);
+    // If there's text before or after, prioritize the image for rendering
+    return { text: alt || "", style: "image", imageSrc: src, imageAlt: alt, box };
   }
   if (htmlImage) {
     const src = htmlImage[1].match(
@@ -228,7 +240,7 @@ export function parseMarkdownLines(source: string): MarkdownVisualLine[] {
       const style = parseInlineStyle(openDiv[0]);
 
       box = {
-        background: style.background || "rgba(255,255,255,0.08)",
+        background: style.background || "rgba(30, 41, 59, 0.6)",
         border: borderAccent(style.borderLeft),
         first: true,
         last: false,
