@@ -34,12 +34,13 @@ try {
   );
 
   assert.equal(text.kind, 'text');
-  assert.equal(text.text, 'Note');
-  assert.equal(isOverlayVisibleAt(text, 1), true);
-  assert.equal(isOverlayVisibleAt({ ...text, visible: false }, 1), false);
+  assert.equal(text.text, '');
+  const labeled = { ...text, text: 'Note' };
+  assert.equal(isOverlayVisibleAt(labeled, 1), true);
+  assert.equal(isOverlayVisibleAt({ ...labeled, visible: false }, 1), false);
   assert.deepEqual(defaultOverlayWindow(8, 10, 4), { startTime: 8, endTime: 10 });
 
-  const moved = translateOverlay(text, 10, 20);
+  const moved = translateOverlay(labeled, 10, 20);
   assert.equal(moved.kind, 'text');
   assert.equal(moved.x, 130);
   assert.equal(moved.y, 100);
@@ -62,12 +63,12 @@ try {
   );
   assert.equal(tiny, null);
 
-  const ordered = reorderOverlays([text, finishedArrow], finishedArrow.id, text.id);
+  const ordered = reorderOverlays([labeled, finishedArrow], finishedArrow.id, labeled.id);
   assert.equal(ordered[0].id, finishedArrow.id);
   assert.equal(ordered[0].zIndex, 1);
 
-  const hit = hitTestOverlay([text], { x: 130, y: 95 }, 1);
-  assert.equal(hit?.id, text.id);
+  const hit = hitTestOverlay([labeled], { x: 130, y: 95 }, 1);
+  assert.equal(hit?.id, labeled.id);
 
   const projectJson = serializeProject({
     cells: [{ id: 'cell_1', type: 'delay', name: 'Pause', seconds: 2 }],

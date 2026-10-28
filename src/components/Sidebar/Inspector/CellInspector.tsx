@@ -1,11 +1,12 @@
 import React from "react";
 import { Settings } from "lucide-react";
-import { Cell, CodeCell, GraphCell, DelayCell } from "../../../types/cell";
+import { Cell, CodeCell, GraphCell, DelayCell, BoardCell } from "../../../types/cell";
 import { SectionTitle } from "../../common/SectionTitle";
 import { Card } from "../../common/Card";
 import { CodeInspector } from "./CodeInspector";
 import { GraphInspector } from "./GraphInspector";
 import { DelayInspector } from "./DelayInspector";
+import { BoardInspector } from "./BoardInspector";
 
 interface CellInspectorProps {
   activeCell: Cell | null;
@@ -40,6 +41,12 @@ export const CellInspector: React.FC<CellInspectorProps> = ({
             {activeCell.type === "delay" && (
               <DelayInspector
                 cell={activeCell as DelayCell}
+                onChange={(updates) => onUpdateCell(activeCell.id, updates)}
+              />
+            )}
+            {activeCell.type === "board" && (
+              <BoardInspector
+                cell={activeCell as BoardCell}
                 onChange={(updates) => onUpdateCell(activeCell.id, updates)}
               />
             )}

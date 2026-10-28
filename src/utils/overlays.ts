@@ -88,8 +88,8 @@ function measureText(overlay: TextOverlay, ctx?: CanvasRenderingContext2D): {
   }
   const longest = lines.reduce((max, line) => Math.max(max, line.length), 1);
   return {
-    width: longest * overlay.fontSize * 0.62 + pad * 2,
-    height: lines.length * overlay.fontSize * 1.25 + pad * 2,
+    width: Math.max(overlay.fontSize * 4, longest * overlay.fontSize * 0.62 + pad * 2),
+    height: Math.max(overlay.fontSize * 1.4 + pad * 2, lines.length * overlay.fontSize * 1.25 + pad * 2),
   };
 }
 
@@ -264,7 +264,7 @@ export function createTextOverlay(
     visible: true,
     locked: false,
     opacity: 1,
-    text: 'Note',
+    text: '',
     x: point.x,
     y: point.y,
     fontFamily: style.fontFamily,

@@ -3,6 +3,7 @@ import {
   CodeCell,
   GraphCell,
   DelayCell,
+  BoardCell,
   GraphType,
 } from '../types/cell';
 
@@ -190,6 +191,19 @@ export function createDelayCell(overrides: Partial<DelayCell> = {}): DelayCell {
     type: 'delay',
     name: 'End Delay',
     seconds: 3,
+    ...overrides,
+  };
+}
+
+export function createBoardCell(overrides: Partial<BoardCell> = {}): BoardCell {
+  const bgColor = overrides.bgColor ?? '#000000';
+  const isWhite = bgColor.replace(/\s/g, '').toLowerCase() === '#ffffff';
+  return {
+    id: uid(),
+    type: 'board',
+    name: isWhite ? 'Whiteboard' : 'Black board',
+    seconds: 8,
+    bgColor,
     ...overrides,
   };
 }

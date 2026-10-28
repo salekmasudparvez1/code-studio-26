@@ -35,6 +35,9 @@ interface MainPanelProps {
   onUndoOverlay: () => void;
   onRedoOverlay: () => void;
   onOverlayTimingChange: (id: string, startTime: number, endTime: number, commit?: boolean) => void;
+  onAddBoardCell?: (color?: string) => void;
+  onCanvasColorChange?: (color: string) => void;
+  onPause?: () => void;
 }
 
 export const MainPanel: React.FC<MainPanelProps> = ({
@@ -68,6 +71,9 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   onUndoOverlay,
   onRedoOverlay,
   onOverlayTimingChange,
+  onAddBoardCell,
+  onCanvasColorChange,
+  onPause,
 }) => {
   return (
     <main className="main-panel">
@@ -98,6 +104,9 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         onCommitOverlay={onCommitOverlay}
         onUndoOverlay={onUndoOverlay}
         onRedoOverlay={onRedoOverlay}
+        onAddBoardCell={onAddBoardCell}
+        onCanvasColorChange={onCanvasColorChange}
+        onPause={onPause}
       />
 
       <Timeline

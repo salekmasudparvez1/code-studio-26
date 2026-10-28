@@ -1,4 +1,4 @@
-import { Cell, CodeCell, GraphCell, DelayCell, NotebookOutput } from '../types/cell';
+import { Cell, CodeCell, GraphCell, DelayCell, BoardCell, NotebookOutput } from '../types/cell';
 import { getCellAtTime, getGraphDuration } from './duration';
 import { clamp } from './math';
 import { tokenizeLine } from './syntaxHighlight';
@@ -614,6 +614,16 @@ export function drawGraphCell(
   }
 }
 
+export function drawBoardCell(
+  ctx: CanvasRenderingContext2D,
+  cell: BoardCell,
+  w: number,
+  h: number
+): void {
+  ctx.fillStyle = cell.bgColor || '#000000';
+  ctx.fillRect(0, 0, w, h);
+}
+
 export function drawDelayCell(
   ctx: CanvasRenderingContext2D,
   cell: DelayCell,
@@ -662,7 +672,8 @@ export function renderCanvasStage(
   cells: Cell[],
   globalTime: number,
   fps: number,
-  overlays: Overlay[] = []
+  overlays: Overlay[] = [],
+  hiddenOverlayIds?: ReadonlySet<string> | string[] | null
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -677,11 +688,17 @@ export function renderCanvasStage(
   const result = getCellAtTime(cells, globalTime);
   if (!result) {
     ctx.clearRect(0, 0, w, h);
-    drawOverlays(ctx, overlays, globalTime);
+    drawOverlays(ctx, overlays, globalTime, hiddenOverlayIds);
     return;
   }
 
   const { cell, localTime } = result;
+
+  if (cell.type === 'board') {
+    drawBoardCell(ctx, cell, w, h);
+    drawOverlays(ctx, overlays, globalTime, hiddenOverlayIds);
+    return;
+  }
 
   // Window title
   let headerTitle = cell.name || 'main.py';
@@ -712,5 +729,5 @@ export function renderCanvasStage(
   drawStatusBar(ctx, w, h, globalTime, fps);
 
   // 5. Non-destructive overlays (preview + export share this pass)
-  drawOverlays(ctx, overlays, globalTime);
+  drawOverlays(ctx, overlays, globalTime, hiddenOverlayIds);
 }

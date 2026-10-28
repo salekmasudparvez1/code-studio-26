@@ -182,8 +182,12 @@ export const StudioWorkspace: React.FC = () => {
   );
 
   const handleAddCell = useCallback(
-    (type: CellType, graphType?: GraphType) => {
-      const newCell = addCell(type, graphType);
+    (
+      type: CellType,
+      graphType?: GraphType,
+      options?: { bgColor?: string; seconds?: number; name?: string },
+    ) => {
+      const newCell = addCell(type, graphType, options);
       if (newCell) {
         const updatedCells = [...cells, newCell];
         const timeline = getTimelineMap(updatedCells);
@@ -402,6 +406,25 @@ export const StudioWorkspace: React.FC = () => {
           onUndoOverlay={undo}
           onRedoOverlay={redo}
           onOverlayTimingChange={handleOverlayTiming}
+          onAddBoardCell={(color) =>
+            handleAddCell("board", undefined, {
+              bgColor: color ?? "#000000",
+            })
+          }
+          onCanvasColorChange={(color) => {
+            if (activeCell?.type === "board") {
+              updateCell(activeCell.id, {
+                bgColor: color,
+                name:
+                  color.toLowerCase() === "#ffffff"
+                    ? "Whiteboard"
+                    : color.toLowerCase() === "#000000"
+                      ? "Black board"
+                      : activeCell.name,
+              });
+            }
+          }}
+          onPause={pause}
         />
       </div>
     </div>

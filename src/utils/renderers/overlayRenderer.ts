@@ -149,10 +149,17 @@ function drawOverlayItem(ctx: CanvasRenderingContext2D, overlay: Overlay): void 
 export function drawOverlays(
   ctx: CanvasRenderingContext2D,
   overlays: Overlay[] | undefined,
-  globalTime: number
+  globalTime: number,
+  hiddenIds?: ReadonlySet<string> | string[] | null
 ): void {
   if (!overlays || overlays.length === 0) return;
+  const hidden = hiddenIds
+    ? hiddenIds instanceof Set
+      ? hiddenIds
+      : new Set(hiddenIds)
+    : null;
   for (const overlay of sortOverlaysByZ(overlays)) {
+    if (hidden?.has(overlay.id)) continue;
     if (!isOverlayVisibleAt(overlay, globalTime)) continue;
     drawOverlayItem(ctx, overlay);
   }

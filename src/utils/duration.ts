@@ -43,7 +43,7 @@ export function getCellDuration(cell: Cell): number {
   if (cell.type === 'graph') {
     return getGraphDuration(cell) + (cell.pause || 0);
   }
-  if (cell.type === 'delay') {
+  if (cell.type === 'delay' || cell.type === 'board') {
     return cell.seconds || 0;
   }
   return 0;

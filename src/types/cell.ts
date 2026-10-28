@@ -1,4 +1,4 @@
-export type CellType = 'code' | 'graph' | 'delay';
+export type CellType = 'code' | 'graph' | 'delay' | 'board';
 
 export type GraphType =
   | 'bar'
@@ -145,4 +145,10 @@ export interface DelayCell extends BaseCell {
   seconds: number;
 }
 
-export type Cell = CodeCell | GraphCell | DelayCell;
+export interface BoardCell extends BaseCell {
+  type: 'board';
+  seconds: number;
+  bgColor: string;
+}
+
+export type Cell = CodeCell | GraphCell | DelayCell | BoardCell;

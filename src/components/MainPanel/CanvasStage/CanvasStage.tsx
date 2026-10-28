@@ -8,7 +8,8 @@ import {
   SkipBack,
   SkipForward,
 } from "lucide-react";
-import { Cell } from "../../../types/cell";
+import { Cell, BoardCell } from "../../../types/cell";
+import { getCellAtTime } from "../../../utils/duration";
 import {
   Overlay,
   OverlayDrawStyle,
@@ -48,6 +49,9 @@ interface CanvasStageProps {
   onCommitOverlay: () => void;
   onUndoOverlay: () => void;
   onRedoOverlay: () => void;
+  onAddBoardCell?: (color?: string) => void;
+  onCanvasColorChange?: (color: string) => void;
+  onPause?: () => void;
 }
 
 export const CanvasStage: React.FC<CanvasStageProps> = ({
@@ -77,6 +81,9 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
   onCommitOverlay,
   onUndoOverlay,
   onRedoOverlay,
+  onAddBoardCell,
+  onCanvasColorChange,
+  onPause,
 }) => {
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const activeCanvasRef = canvasRef || internalRef;
@@ -84,7 +91,11 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [draftOverlay, setDraftOverlay] = useState<Overlay | null>(null);
+  const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentResult = getCellAtTime(cells, currentTime);
+  const currentCell = currentResult?.cell ?? null;
+  const currentBoard = currentCell?.type === "board" ? (currentCell as BoardCell) : null;
 
   const resetHideTimer = useCallback(() => {
     setControlsVisible(true);
@@ -171,8 +182,15 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     const previewOverlays = draftOverlay
       ? [...overlays, draftOverlay]
       : overlays;
-    renderCanvasStage(canvas, cells, currentTime, fps, previewOverlays);
-  }, [activeCanvasRef, cells, overlays, draftOverlay, currentTime, fps]);
+    renderCanvasStage(
+      canvas,
+      cells,
+      currentTime,
+      fps,
+      previewOverlays,
+      editingOverlayId ? [editingOverlayId] : null,
+    );
+  }, [activeCanvasRef, cells, overlays, draftOverlay, currentTime, fps, editingOverlayId]);
 
   const containerClassName = [
     "preview-container",
@@ -211,6 +229,10 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
         onStyleChange={onOverlayStyleChange}
         onUndo={onUndoOverlay}
         onRedo={onRedoOverlay}
+        canvasColor={currentBoard?.bgColor ?? "#000000"}
+        isBoardActive={Boolean(currentBoard)}
+        onCanvasColorChange={onCanvasColorChange}
+        onAddBoardCell={onAddBoardCell}
       />
       {overlayError && (
         <div className="overlay-error" role="alert">
@@ -234,6 +256,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
           drawStyle={overlayStyle}
           currentTime={currentTime}
           totalDuration={totalDuration}
+          clipEndTime={currentResult?.entry.end}
           onSelect={onSelectOverlay}
           onAdd={onAddOverlay}
           onDelete={onDeleteOverlay}
@@ -241,6 +264,8 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
           onCommit={onCommitOverlay}
           onDraftChange={setDraftOverlay}
           onToolChange={onOverlayToolChange}
+          onEditingChange={setEditingOverlayId}
+          onPause={onPause}
         />
       </div>
 

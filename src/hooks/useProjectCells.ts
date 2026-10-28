@@ -5,6 +5,7 @@ import {
   createCodeCell,
   createGraphCell,
   createDelayCell,
+  createBoardCell,
   createDecisionBoundaryCell,
   createNeuralNetworkCell,
   createCnnCell,
@@ -25,7 +26,11 @@ export function useProjectCells(initialCells: Cell[] | undefined = INITIAL_CELLS
 
   const activeCell = cells.find((c) => c.id === activeCellId) || null;
 
-  const addCell = useCallback((type: CellType, graphType?: GraphType) => {
+  const addCell = useCallback((
+    type: CellType,
+    graphType?: GraphType,
+    options?: { bgColor?: string; seconds?: number; name?: string },
+  ) => {
     let newCell: Cell;
 
     if (type === 'code') {
@@ -60,6 +65,12 @@ export function useProjectCells(initialCells: Cell[] | undefined = INITIAL_CELLS
           data: [14, 28, 22, 38, 26, 45, 32],
         });
       }
+    } else if (type === 'board') {
+      newCell = createBoardCell({
+        seconds: options?.seconds ?? 8,
+        bgColor: options?.bgColor ?? '#000000',
+        ...(options?.name ? { name: options.name } : {}),
+      });
     } else {
       newCell = createDelayCell({
         name: 'Pause',

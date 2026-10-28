@@ -11,6 +11,7 @@ import {
   Type,
   Undo2,
   Ban,
+  Presentation,
 } from "lucide-react";
 import {
   OverlayDrawStyle,
@@ -27,6 +28,10 @@ interface OverlayToolbarProps {
   onStyleChange: (updates: Partial<OverlayDrawStyle>) => void;
   onUndo: () => void;
   onRedo: () => void;
+  canvasColor?: string | null;
+  isBoardActive?: boolean;
+  onCanvasColorChange?: (color: string) => void;
+  onAddBoardCell?: (color?: string) => void;
 }
 
 const TOOLS: { id: OverlayTool; label: string; icon: React.ReactNode }[] = [
@@ -74,11 +79,16 @@ export const OverlayToolbar: React.FC<OverlayToolbarProps> = ({
   onStyleChange,
   onUndo,
   onRedo,
+  canvasColor,
+  isBoardActive = false,
+  onCanvasColorChange,
+  onAddBoardCell,
 }) => {
   const strokeColor = toHex(drawStyle.stroke, "#facc15");
   const fillColor = toHex(drawStyle.color ?? drawStyle.fill, "#ffffff");
   const strokeTransparent = isTransparent(drawStyle.stroke);
   const fillTransparent = isTransparent(drawStyle.color ?? drawStyle.fill);
+  const boardColor = toHex(canvasColor ?? "#000000", "#000000");
 
   return (
     <div
@@ -101,6 +111,63 @@ export const OverlayToolbar: React.FC<OverlayToolbarProps> = ({
             {item.icon}
           </button>
         ))}
+      </div>
+
+      <div className="ps-divider" />
+
+      <div className="ps-group">
+        <button
+          type="button"
+          className={`ps-btn ${isBoardActive ? "is-active" : ""}`}
+          title="Add a black board cell for writing"
+          aria-label="Add black board"
+          aria-pressed={isBoardActive}
+          onClick={() => onAddBoardCell?.("#000000")}
+        >
+          <Presentation size={15} />
+        </button>
+        <label className="ps-field">
+          <span className="ps-label">Canvas</span>
+          <span className="ps-swatch-wrap">
+            <input
+              type="color"
+              className="ps-swatch-input"
+              aria-label="Canvas board color"
+              value={boardColor}
+              onChange={(event) => {
+                if (isBoardActive) {
+                  onCanvasColorChange?.(event.target.value);
+                } else {
+                  onAddBoardCell?.(event.target.value);
+                }
+              }}
+            />
+          </span>
+        </label>
+        <button
+          type="button"
+          className="ps-board-swatch"
+          title="Black board"
+          aria-label="Black board"
+          style={{ background: "#000000" }}
+          onClick={() =>
+            isBoardActive
+              ? onCanvasColorChange?.("#000000")
+              : onAddBoardCell?.("#000000")
+          }
+        />
+        <button
+          type="button"
+          className="ps-board-swatch"
+          title="Whiteboard"
+          aria-label="Whiteboard"
+          style={{ background: "#ffffff" }}
+          onClick={() =>
+            isBoardActive
+              ? onCanvasColorChange?.("#ffffff")
+              : onAddBoardCell?.("#ffffff")
+          }
+        />
       </div>
 
       <div className="ps-divider" />

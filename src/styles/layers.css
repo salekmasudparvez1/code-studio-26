@@ -155,6 +155,12 @@
   border-color: rgba(251, 191, 36, 0.3);
 }
 
+.cell-type-icon.cell-type-board {
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(226, 232, 240, 0.35);
+}
+
 /* Layer Info Text */
 .cell-info {
   flex: 1;

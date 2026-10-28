@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   FileCode,
   Clock,
+  Presentation,
   Network,
   Split,
   Shapes,
@@ -159,6 +160,14 @@ export const AddCellButtons: React.FC<AddCellButtonsProps> = ({ onAddCell, onImp
           )}
         </div>
 
+        <Button
+          size="sm"
+          icon={<Presentation size={14} />}
+          onClick={() => onAddCell('board')}
+          title="Add a black board / whiteboard cell"
+        >
+          Board
+        </Button>
         <Button
           size="sm"
           icon={<Clock size={14} />}

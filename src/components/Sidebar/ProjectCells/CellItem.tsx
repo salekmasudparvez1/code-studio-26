@@ -3,6 +3,7 @@ import {
   FileCode,
   BarChart3,
   Clock,
+  Presentation,
   ChevronUp,
   ChevronDown,
   Trash2,
@@ -50,6 +51,7 @@ export const CellItem: React.FC<CellItemProps> = ({
   const renderIcon = () => {
     if (cell.type === 'code') return <FileCode size={15} />;
     if (cell.type === 'delay') return <Clock size={15} />;
+    if (cell.type === 'board') return <Presentation size={15} />;
     if (cell.type === 'graph') {
       switch (cell.graphType) {
         case 'ann':
@@ -82,6 +84,7 @@ export const CellItem: React.FC<CellItemProps> = ({
   const getSubtypeLabel = () => {
     if (cell.type === 'code') return 'Code';
     if (cell.type === 'delay') return 'Delay';
+    if (cell.type === 'board') return 'Board';
     if (cell.type === 'graph') {
       switch (cell.graphType) {
         case 'ann':
@@ -114,6 +117,7 @@ export const CellItem: React.FC<CellItemProps> = ({
   const getIconClass = () => {
     if (cell.type === 'code') return 'cell-type-code';
     if (cell.type === 'delay') return 'cell-type-delay';
+    if (cell.type === 'board') return 'cell-type-board';
     if (cell.type === 'graph') {
       return `cell-type-${cell.graphType || 'graph'}`;
     }
