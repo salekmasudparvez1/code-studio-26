@@ -292,10 +292,11 @@
 .preview-container.preview-fullscreen .overlay-toolbar,
 .preview-container.preview-fallback-fullscreen .overlay-toolbar {
   position: absolute;
-  top: 24px;
+  top: 0px;
   left: 24px;
-  z-index: 1000;
-  width: min(920px, calc(100vw - 220px));
+  right: 24px;
+  width: auto;
+  z-index: 100;
   background: rgba(13, 17, 24, 0.88);
   backdrop-filter: blur(16px);
 }

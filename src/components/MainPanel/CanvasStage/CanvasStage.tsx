@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
+  Eye,
+  EyeOff,
   Maximize2,
   Minimize2,
   Pause,
@@ -54,6 +56,8 @@ interface CanvasStageProps {
   onPause?: () => void;
 }
 
+const AUTO_HIDE_DELAY_MS = 2500;
+
 export const CanvasStage: React.FC<CanvasStageProps> = ({
   canvasRef,
   cells,
@@ -88,53 +92,29 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const activeCanvasRef = canvasRef || internalRef;
   const previewRef = useRef<HTMLDivElement | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [controlsVisible, setControlsVisible] = useState(true);
+  // Single source of truth for "user manually hid the bar"
+  const [controlsHidden, setControlsHidden] = useState(false);
+  // Auto-hide in fullscreen+playing; toggled by mouse move
+  const [autoHidden, setAutoHidden] = useState(false);
+
   const [draftOverlay, setDraftOverlay] = useState<Overlay | null>(null);
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const currentResult = getCellAtTime(cells, currentTime);
   const currentCell = currentResult?.cell ?? null;
-  const currentBoard = currentCell?.type === "board" ? (currentCell as BoardCell) : null;
+  const currentBoard =
+    currentCell?.type === "board" ? (currentCell as BoardCell) : null;
 
-  const resetHideTimer = useCallback(() => {
-    setControlsVisible(true);
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-    if (isFullscreen && isPlaying) {
-      hideTimerRef.current = setTimeout(() => {
-        setControlsVisible(false);
-      }, 2500);
-    }
-  }, [isFullscreen, isPlaying]);
+  // Bar is visible only when not manually hidden AND not auto-hidden
+  const isBarVisible = !controlsHidden && !autoHidden;
 
-  useEffect(() => {
-    if (!isFullscreen || !isPlaying) {
-      setControlsVisible(true);
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-        hideTimerRef.current = null;
-      }
-    } else {
-      resetHideTimer();
-    }
-    return () => {
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    };
-  }, [isFullscreen, isPlaying, resetHideTimer]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement === previewRef.current);
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
-
-  const toggleFullscreen = async () => {
+  // ---------------------------------------------------------------------------
+  // Fullscreen toggle (stable identity for effect deps)
+  // ---------------------------------------------------------------------------
+  const toggleFullscreen = useCallback(async () => {
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
@@ -149,8 +129,54 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     } catch {
       setIsFullscreen((prev) => !prev);
     }
-  };
+  }, [isFullscreen]);
 
+  // ---------------------------------------------------------------------------
+  // Auto-hide timer (only in fullscreen + playing)
+  // ---------------------------------------------------------------------------
+  const resetHideTimer = useCallback(() => {
+    setAutoHidden(false);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    if (isFullscreen && isPlaying) {
+      hideTimerRef.current = setTimeout(() => {
+        setAutoHidden(true);
+      }, AUTO_HIDE_DELAY_MS);
+    }
+  }, [isFullscreen, isPlaying]);
+
+  useEffect(() => {
+    if (!isFullscreen || !isPlaying) {
+      setAutoHidden(false);
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+    } else {
+      resetHideTimer();
+    }
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [isFullscreen, isPlaying, resetHideTimer]);
+
+  // ---------------------------------------------------------------------------
+  // Sync isFullscreen with browser fullscreen state
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === previewRef.current);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Unified keyboard shortcuts
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -163,10 +189,23 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
 
       if (isEditingText) return;
 
+      // H — toggle manual hide/show of the controls bar
+      if (event.key === "h" || event.key === "H") {
+        event.preventDefault();
+        setControlsHidden((v) => !v);
+        setAutoHidden(false);
+        return;
+      }
+
+      // F — toggle fullscreen
       if (event.code === "KeyF") {
         event.preventDefault();
-        toggleFullscreen();
-      } else if (event.key === "Escape" && isFullscreen) {
+        void toggleFullscreen();
+        return;
+      }
+
+      // Esc — exit fallback fullscreen when browser fullscreen isn't active
+      if (event.key === "Escape" && isFullscreen) {
         if (!document.fullscreenElement) {
           setIsFullscreen(false);
         }
@@ -174,8 +213,11 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFullscreen]);
+  }, [isFullscreen, toggleFullscreen]);
 
+  // ---------------------------------------------------------------------------
+  // Render canvas
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const canvas = activeCanvasRef.current;
     if (!canvas) return;
@@ -190,12 +232,26 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
       previewOverlays,
       editingOverlayId ? [editingOverlayId] : null,
     );
-  }, [activeCanvasRef, cells, overlays, draftOverlay, currentTime, fps, editingOverlayId]);
+  }, [
+    activeCanvasRef,
+    cells,
+    overlays,
+    draftOverlay,
+    currentTime,
+    fps,
+    editingOverlayId,
+  ]);
+
+  const handleToggleManualHidden = () => {
+    setControlsHidden((v) => !v);
+    // If we just showed the bar, restart the auto-hide timer
+    if (controlsHidden) resetHideTimer();
+  };
 
   const containerClassName = [
     "preview-container",
     isFullscreen ? "preview-fullscreen preview-fallback-fullscreen" : "",
-    isFullscreen && !controlsVisible ? "controls-hidden" : "",
+    isFullscreen && !isBarVisible ? "controls-hidden" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -205,7 +261,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
       ref={previewRef}
       className={containerClassName}
       onMouseMove={resetHideTimer}
-      onMouseEnter={() => setControlsVisible(true)}
+      onMouseEnter={resetHideTimer}
     >
       {isFullscreen && (
         <button
@@ -269,78 +325,95 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
         />
       </div>
 
-      <div
-        className="preview-player-controls"
-        aria-label="Preview video controls"
-      >
+      {/* Wrapper so the floating toggle stays visible when the bar is hidden */}
+      <div className="preview-controls-wrap">
         <button
           type="button"
-          className="preview-ctrl-btn"
-          onClick={onTogglePlay}
-          title={isPlaying ? "Pause preview (Space)" : "Play preview (Space)"}
-          aria-label={isPlaying ? "Pause" : "Play"}
+          className="preview-ctrl-btn preview-ctrl-toggle"
+          onClick={handleToggleManualHidden}
+          title={controlsHidden ? "Show controls (H)" : "Hide controls (H)"}
+          aria-label={controlsHidden ? "Show controls" : "Hide controls"}
+          aria-expanded={!controlsHidden}
+          aria-controls="preview-controls-bar"
         >
-          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+          {controlsHidden ? <Eye size={15} /> : <EyeOff size={15} />}
         </button>
 
-        <button
-          type="button"
-          className="preview-ctrl-btn"
-          onClick={onReset}
-          title="Reset preview (R)"
-          aria-label="Reset"
+        <div
+          id="preview-controls-bar"
+          className={`preview-player-controls${isBarVisible ? "" : " is-hidden"}`}
+          aria-label="Preview video controls"
+          aria-hidden={!isBarVisible}
         >
-          <RotateCcw size={15} />
-        </button>
+          <button
+            type="button"
+            className="preview-ctrl-btn"
+            onClick={onTogglePlay}
+            title={isPlaying ? "Pause preview (Space)" : "Play preview (Space)"}
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+          </button>
 
-        <button
-          type="button"
-          className="preview-ctrl-btn"
-          onClick={() => onStep(-1)}
-          title="Back 1s (Left Arrow / J, Shift+Left for 5s)"
-          aria-label="Step backward 1 second"
-        >
-          <SkipBack size={15} />
-        </button>
+          <button
+            type="button"
+            className="preview-ctrl-btn"
+            onClick={onReset}
+            title="Reset preview (R)"
+            aria-label="Reset"
+          >
+            <RotateCcw size={15} />
+          </button>
 
-        <button
-          type="button"
-          className="preview-ctrl-btn"
-          onClick={() => onStep(1)}
-          title="Forward 1s (Right Arrow / L, Shift+Right for 5s)"
-          aria-label="Step forward 1 second"
-        >
-          <SkipForward size={15} />
-        </button>
+          <button
+            type="button"
+            className="preview-ctrl-btn"
+            onClick={() => onStep(-1)}
+            title="Back 1s (Left Arrow / J, Shift+Left for 5s)"
+            aria-label="Step backward 1 second"
+          >
+            <SkipBack size={15} />
+          </button>
 
-        <input
-          type="range"
-          className="preview-ctrl-slider"
-          min={0}
-          max={Math.max(totalDuration, 0.001)}
-          step={0.01}
-          value={Math.min(currentTime, totalDuration)}
-          onChange={(event) => onSeek(Number(event.target.value))}
-          aria-label="Preview progress"
-        />
+          <button
+            type="button"
+            className="preview-ctrl-btn"
+            onClick={() => onStep(1)}
+            title="Forward 1s (Right Arrow / L, Shift+Right for 5s)"
+            aria-label="Step forward 1 second"
+          >
+            <SkipForward size={15} />
+          </button>
 
-        <span className="preview-player-time">
-          {formatTime(currentTime)} / {formatTime(totalDuration)}
-        </span>
+          <input
+            type="range"
+            className="preview-ctrl-slider"
+            min={0}
+            max={Math.max(totalDuration, 0.001)}
+            step={0.01}
+            value={Math.min(currentTime, totalDuration)}
+            onChange={(event) => onSeek(Number(event.target.value))}
+            aria-label="Preview progress"
+          />
 
-        <button
-          type="button"
-          className="preview-ctrl-btn"
-          onClick={toggleFullscreen}
-          title={
-            isFullscreen
-              ? "Exit fullscreen (Esc / F)"
-              : "Preview fullscreen (F)"
-          }
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-        >
-          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        </button>
+          <span className="preview-player-time">
+            {formatTime(currentTime)} / {formatTime(totalDuration)}
+          </span>
+
+          <button
+            type="button"
+            className="preview-ctrl-btn"
+            onClick={toggleFullscreen}
+            title={
+              isFullscreen
+                ? "Exit fullscreen (Esc / F)"
+                : "Preview fullscreen (F)"
+            }
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
+        </div>
       </div>
     </div>
   );
