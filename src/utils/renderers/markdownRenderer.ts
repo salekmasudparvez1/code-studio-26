@@ -7,6 +7,30 @@ import { drawRichText, markdownStyle, measureRichText } from "./markdown/richTex
 import { wrapMarkdownLine } from "./markdown/wrapHtmlLine";
 import { drawNotebookOutput } from "./notebookOutputRenderer";
 
+const markdownImages = new Map<string, HTMLImageElement>();
+
+function drawMarkdownImage(ctx: CanvasRenderingContext2D, line: MarkdownVisualLine, x: number, y: number, maxWidth: number): void {
+  if (!line.imageSrc) return;
+  let image = markdownImages.get(line.imageSrc);
+  if (!image) {
+    image = new Image();
+    image.onload = () => window.dispatchEvent(new Event("codestudio:image-loaded"));
+    image.onerror = () => window.dispatchEvent(new Event("codestudio:image-loaded"));
+    image.src = line.imageSrc;
+    markdownImages.set(line.imageSrc, image);
+  }
+  if (image.complete && image.naturalWidth > 0) {
+    const scale = Math.min(maxWidth / image.naturalWidth, 150 / image.naturalHeight, 1);
+    ctx.drawImage(image, x, y, image.naturalWidth * scale, image.naturalHeight * scale);
+  } else {
+    ctx.fillStyle = "#8b949e";
+    ctx.font = "16px system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Loading image" + (line.imageAlt ? ": " + line.imageAlt : "…"), x, y + 8);
+  }
+}
+
 function wrapVisualLine(
   ctx: CanvasRenderingContext2D,
   line: MarkdownVisualLine,
@@ -125,7 +149,7 @@ export function drawMarkdownCell(
     const boxPad = line.box ? 18 : 0;
     drawCallout(ctx, line, left - 24, y, maxWidth + 48, lineHeight);
 
-    if (line.style === "hr") {
+    if (line.style === "image") {\n      drawMarkdownImage(ctx, line, left, y, maxWidth);\n      return;\n    }\n\n    if (line.style === "hr") {
       ctx.strokeStyle = "#30363d";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -179,7 +203,7 @@ export function drawMarkdownCell(
         : measureRichText(ctx, last.text, left + boxPad, style) + 3,
       w - 80,
     );
-    const cursorY = top + (shownLines.length - 1) * lineHeight;
+    const cursorY = visualY - (last.style === "image" ? 170 : lineHeight);
     ctx.fillStyle = "#e6edf3";
     ctx.fillRect(cursorX, cursorY + 2, 3, (last.size || style.size) + 5);
   }
