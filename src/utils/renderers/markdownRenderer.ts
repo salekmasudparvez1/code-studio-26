@@ -1,6 +1,6 @@
 import { CodeCell } from "../../types/cell";
 import { clamp } from "../math";
-import { drawNotebookImage } from "./markdown/drawNotebookImage";
+// import { drawNotebookImage } from "./markdown/drawNotebookImage";
 import { sliceTypedHtml } from "./markdown/htmlText";
 import { MarkdownVisualLine } from "./markdown/markdownTypes";
 import { parseMarkdownLines } from "./markdown/parseMarkdownLines";
@@ -233,17 +233,14 @@ export function drawMarkdownCell(
 
   if (Math.floor(globalTime * 2) % 2 === 0 && shownLines.length > 0) {
     const last = shownLines[shownLines.length - 1];
-    const style = markdownStyle(last.style, {
-      size: last.size,
-      color: last.color,
-    });
+
     const boxPad = last.box ? 18 : 0;
-    const cursorX = Math.min(
-      last.style === "table"
-        ? left + maxWidth
-        : measureRichText(ctx, last.text, left + boxPad, style) + 3,
-      w - 80,
-    );
+    // const cursorX = Math.min(
+    //   last.style === "table"
+    //     ? left + maxWidth
+    //     : measureRichText(ctx, last.text, left + boxPad, style) + 3,
+    //   w - 80,
+    // );
 
     if (Math.floor(globalTime * 2) % 2 === 0 && shownLines.length > 0) {
       const lastIndex = shownLines.length - 1;
@@ -252,7 +249,7 @@ export function drawMarkdownCell(
         size: last.size,
         color: last.color,
       });
-      const boxPad = last.box ? 18 : 0;
+      // const boxPad = last.box ? 18 : 0;
 
       const cursorX = Math.min(
         last.style === "table"
