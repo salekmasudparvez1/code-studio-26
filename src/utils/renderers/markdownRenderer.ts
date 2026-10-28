@@ -9,6 +9,29 @@ import { drawNotebookOutput } from "./notebookOutputRenderer";
 
 const markdownImages = new Map<string, HTMLImageElement>();
 
+// Compact large Base64 images while typing so their payload is never rendered as text.
+function compactBase64Images(source: string): {
+  compactSource: string;
+  restore: (visibleSource: string) => string;
+} {
+  const images: string[] = [];
+  const compactSource = source.replace(
+    /!\[([^\]]*)\]\((data:image\/[a-zA-Z0-9.+-]+;base64,[^\s)]*)\)/g,
+    (_match, alt: string, dataUrl: string) => {
+      const index = images.push("![" + alt + "](" + dataUrl + ")") - 1;
+      return "\uE000" + index + "\uE001";
+    },
+  );
+
+  return {
+    compactSource,
+    restore: (visibleSource: string) =>
+      visibleSource
+        .replace(/\uE000(\d+)\uE001/g, (_token, index: string) => images[Number(index)] ?? "")
+        .replace(/\uE000[^\n]*$/g, ""),
+  };
+}
+
 function drawMarkdownImage(ctx: CanvasRenderingContext2D, line: MarkdownVisualLine, x: number, y: number, maxWidth: number): void {
   if (!line.imageSrc) return;
   let image = markdownImages.get(line.imageSrc);
@@ -129,9 +152,11 @@ export function drawMarkdownCell(
 ): void {
   const speed = cell.speed || 18;
   const source = (cell.source || "").replace(/\r\n/g, "\n");
-  const typeDuration = source.length / Math.max(1, speed);
+  const compacted = compactBase64Images(source);
+  const typeDuration = compacted.compactSource.length / Math.max(1, speed);
   const visibleChars = Math.floor(clamp(localTime, 0, typeDuration) * speed);
-  const visibleSource = sliceTypedHtml(source, visibleChars);
+  const typedSource = sliceTypedHtml(compacted.compactSource, visibleChars);
+  const visibleSource = compacted.restore(typedSource);
   const left = 150;
   const top = 210;
   const maxWidth = w - left - 150;
@@ -149,7 +174,10 @@ export function drawMarkdownCell(
     const boxPad = line.box ? 18 : 0;
     drawCallout(ctx, line, left - 24, y, maxWidth + 48, lineHeight);
 
-    if (line.style === "image") {\n      drawMarkdownImage(ctx, line, left, y, maxWidth);\n      return;\n    }\n\n    if (line.style === "hr") {
+    if (line.style === "image") {
+      drawMarkdownImage(ctx, line, left, y, maxWidth);
+      return;
+    }\n\n    if (line.style === "hr") {
       ctx.strokeStyle = "#30363d";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -203,8 +231,10 @@ export function drawMarkdownCell(
         : measureRichText(ctx, last.text, left + boxPad, style) + 3,
       w - 80,
     );
-    const cursorY = visualY - (last.style === "image" ? 170 : lineHeight);
-    ctx.fillStyle = "#e6edf3";
-    ctx.fillRect(cursorX, cursorY + 2, 3, (last.size || style.size) + 5);
+    const cursorY = top + (shownLines.length - 1) * lineHeight;
+    if (last.style !== "image") {
+      ctx.fillStyle = "#e6edf3";
+      ctx.fillRect(cursorX, cursorY + 2, 3, (last.size || style.size) + 5);
+    }
   }
 }
