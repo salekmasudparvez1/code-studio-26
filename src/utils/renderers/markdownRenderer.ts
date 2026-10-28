@@ -177,7 +177,9 @@ export function drawMarkdownCell(
     if (line.style === "image") {
       drawMarkdownImage(ctx, line, left, y, maxWidth);
       return;
-    }\n\n    if (line.style === "hr") {
+    }
+
+    if (line.style === "hr") {
       ctx.strokeStyle = "#30363d";
       ctx.lineWidth = 2;
       ctx.beginPath();
