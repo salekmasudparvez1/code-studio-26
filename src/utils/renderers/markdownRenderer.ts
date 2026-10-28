@@ -36,7 +36,7 @@ function wrapVisualLine(
   line: MarkdownVisualLine,
   maxWidth: number,
 ): MarkdownVisualLine[] {
-  if (line.style === "hr") return [line];
+  if (line.style === "hr" || line.style === "image") return [line];
   if (line.style === "table" && line.tableCells?.length) {
     const colW = maxWidth / line.tableCells.length;
     const wrappedCols = line.tableCells.map((cell) =>
