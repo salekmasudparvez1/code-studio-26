@@ -1,8 +1,4 @@
-import {
-  CalloutBox,
-  MarkdownVisualLine,
-  TableCell,
-} from "./markdownTypes";
+import { CalloutBox, MarkdownVisualLine, TableCell } from "./markdownTypes";
 import {
   borderAccent,
   isDarkColor,
@@ -24,13 +20,24 @@ function applyInlineMarkdown(html: string): string {
     .join("");
 }
 
-function unwrap(tagName: string, html: string): { attrs: string; inner: string } | null {
-  const open = html.match(new RegExp(`^<${tagName}\\b([^>]*)>([\\s\\S]*)$`, "i"));
+function unwrap(
+  tagName: string,
+  html: string,
+): { attrs: string; inner: string } | null {
+  const open = html.match(
+    new RegExp(`^<${tagName}\\b([^>]*)>([\\s\\S]*)$`, "i"),
+  );
   if (!open) return null;
-  return { attrs: open[1] || "", inner: open[2].replace(new RegExp(`</${tagName}\\s*>$`, "i"), "") };
+  return {
+    attrs: open[1] || "",
+    inner: open[2].replace(new RegExp(`</${tagName}\\s*>$`, "i"), ""),
+  };
 }
 
-function readableColor(color: string | undefined, box?: CalloutBox): string | undefined {
+function readableColor(
+  color: string | undefined,
+  box?: CalloutBox,
+): string | undefined {
   if (!color) return undefined;
   if (box && isLightColor(box.background)) return color;
   if (isDarkColor(color) && !isLightColor(box?.background)) return undefined;
@@ -60,10 +67,7 @@ function isTableRow(line: string): boolean {
   return /^\s*\|.+\|\s*$/.test(line);
 }
 
-function classifyLine(
-  rawLine: string,
-  box?: CalloutBox,
-): MarkdownVisualLine {
+function classifyLine(rawLine: string, box?: CalloutBox): MarkdownVisualLine {
   const trimmed = rawLine.trim();
   if (!trimmed) return { text: "", style: "paragraph", box };
 
@@ -72,7 +76,13 @@ function classifyLine(
   const inlineMdImage = trimmed.match(/!\[([^\]]*)\]\((data:image\/[a-zA-Z0-9.+-]+;base64,[^\s)]+)\)/);
 
   if (mdImage) {
-    return { text: mdImage[1], style: "image", imageSrc: mdImage[2].trim().replace(/^<|>$/g, ""), imageAlt: mdImage[1], box };
+    return {
+      text: mdImage[1],
+      style: "image",
+      imageSrc: mdImage[2].trim().replace(/^<|>$/g, ""),
+      imageAlt: mdImage[1],
+      box,
+    };
   }
   if (inlineMdImage) {
     // Extract inline base64 image and return as image line
@@ -85,8 +95,12 @@ function classifyLine(
     return { text: alt || "", style: "image", imageSrc: src, imageAlt: alt, box };
   }
   if (htmlImage) {
-    const src = htmlImage[1].match(/\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
-    const alt = htmlImage[1].match(/\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const src = htmlImage[1].match(
+      /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i,
+    );
+    const alt = htmlImage[1].match(
+      /\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i,
+    );
     if (src) {
       const imageSrc = src[1] || src[2] || src[3];
       const imageAlt = alt?.[1] || alt?.[2] || alt?.[3] || "";
@@ -103,8 +117,13 @@ function classifyLine(
     return { text: "", style: "hr", box };
   }
 
-  const htmlHeading = unwrap("h1", trimmed) || unwrap("h2", trimmed) || unwrap("h3", trimmed)
-    || unwrap("h4", trimmed) || unwrap("h5", trimmed) || unwrap("h6", trimmed);
+  const htmlHeading =
+    unwrap("h1", trimmed) ||
+    unwrap("h2", trimmed) ||
+    unwrap("h3", trimmed) ||
+    unwrap("h4", trimmed) ||
+    unwrap("h5", trimmed) ||
+    unwrap("h6", trimmed);
   if (htmlHeading) {
     const tag = trimmed.match(/^<h([1-6])\b[^>]*>/i);
     const level = tag ? Number(tag[1]) : 2;
@@ -128,7 +147,12 @@ function classifyLine(
   if (htmlP) {
     const open = trimmed.match(/^<p\b[^>]*>/i)?.[0] || "";
     const color = readableColor(parseInlineStyle(open).color, box);
-    return { text: applyInlineMarkdown(htmlP.inner), style: "paragraph", color, box };
+    return {
+      text: applyInlineMarkdown(htmlP.inner),
+      style: "paragraph",
+      color,
+      box,
+    };
   }
 
   if (/^```/.test(trimmed)) {
@@ -199,7 +223,10 @@ function markBoxEdges(lines: MarkdownVisualLine[]): MarkdownVisualLine[] {
 }
 
 export function parseMarkdownLines(source: string): MarkdownVisualLine[] {
-  const prepared = replaceLatex(source.replace(/\r\n/g, "\n").replace(/<br\s*\/?>/gi, "\n"));
+  const prepared = replaceLatex(
+    source.replace(/\r\n/g, "\n").replace(/<br\s*\/?>/gi, "\n"),
+  );
+
   const rawLines = prepared.split("\n");
   const visual: MarkdownVisualLine[] = [];
   let box: CalloutBox | undefined;
@@ -208,54 +235,110 @@ export function parseMarkdownLines(source: string): MarkdownVisualLine[] {
     let line = rawLines[i];
 
     const openDiv = line.match(/<div\b[^>]*>/i);
+
     if (openDiv) {
       const style = parseInlineStyle(openDiv[0]);
+
       box = {
         background: style.background || "rgba(30, 41, 59, 0.6)",
         border: borderAccent(style.borderLeft),
         first: true,
         last: false,
       };
+
       line = line.replace(/<div\b[^>]*>/i, "");
-      if (!line.trim() && /<\/div>/i.test(rawLines[i + 1] || "") === false) {
+
+      if (!line.trim() && !/<\/div>/i.test(rawLines[i + 1] || "")) {
         continue;
       }
     }
 
     const closeDiv = /<\/div>/i.test(line);
-    if (closeDiv) line = line.replace(/<\/div>/gi, "");
 
+    if (closeDiv) {
+      line = line.replace(/<\/div>/gi, "");
+    }
+
+    // Parse Markdown tables.
     if (isTableRow(line) && !isTableSep(line)) {
       const rows: string[][] = [parseTableRow(line)];
       let header = true;
-      while (i + 1 < rawLines.length && (isTableRow(rawLines[i + 1]) || isTableSep(rawLines[i + 1]))) {
+
+      while (
+        i + 1 < rawLines.length &&
+        (isTableRow(rawLines[i + 1]) || isTableSep(rawLines[i + 1]))
+      ) {
         i += 1;
+
         if (isTableSep(rawLines[i])) {
           header = false;
           continue;
         }
+
         rows.push(parseTableRow(rawLines[i]));
       }
+
       rows.forEach((cells, rowIndex) => {
         visual.push({
           text: cells.join("   "),
           style: "table",
-          tableCells: cells.map((text): TableCell => ({
-            text,
-            header: rowIndex === 0 && (header || rows.length > 1),
-          })),
+          tableCells: cells.map(
+            (text): TableCell => ({
+              text,
+              header: rowIndex === 0 && (header || rows.length > 1),
+            }),
+          ),
           box,
         });
       });
+
       if (closeDiv) box = undefined;
       continue;
     }
 
+    // Parse standalone Markdown images, including Base64 data URLs.
+    const trimmedLine = line.trim();
+    const markdownImage = trimmedLine.match(/^!\[([^\]]*)\]\(([\s\S]+)\)$/);
+
+    if (markdownImage) {
+      visual.push({
+        text: "",
+        style: "image",
+        imageAlt: markdownImage[1],
+        imageSrc: markdownImage[2],
+        box,
+      });
+
+      if (closeDiv) box = undefined;
+      continue;
+    }
+
+    // Parse standalone HTML <img> tags.
+    const htmlImage = trimmedLine.match(
+      /^<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*\/?>$/i,
+    );
+
+    if (htmlImage) {
+      visual.push({
+        text: "",
+        style: "image",
+        imageAlt: "",
+        imageSrc: htmlImage[1] || htmlImage[2] || htmlImage[3],
+        box,
+      });
+
+      if (closeDiv) box = undefined;
+      continue;
+    }
+
+    // Preserve existing text, headings, code, and callout behavior.
     if (line.trim() || box) {
       visual.push(classifyLine(line, box));
     }
 
-    if (closeDiv) box = undefined;
+    if (closeDiv) {
+      box = undefined;
+    }
   }
 
   return markBoxEdges(visual);
