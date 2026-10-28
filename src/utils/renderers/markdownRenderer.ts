@@ -1,33 +1,60 @@
 import { CodeCell } from "../../types/cell";
 import { clamp } from "../math";
+import { drawNotebookImage } from "./markdown/drawNotebookImage";
 import { sliceTypedHtml } from "./markdown/htmlText";
 import { MarkdownVisualLine } from "./markdown/markdownTypes";
 import { parseMarkdownLines } from "./markdown/parseMarkdownLines";
-import { drawRichText, markdownStyle, measureRichText } from "./markdown/richText";
+import {
+  drawRichText,
+  markdownStyle,
+  measureRichText,
+} from "./markdown/richText";
 import { wrapMarkdownLine } from "./markdown/wrapHtmlLine";
 import { drawNotebookOutput } from "./notebookOutputRenderer";
 
 const markdownImages = new Map<string, HTMLImageElement>();
 
-function drawMarkdownImage(ctx: CanvasRenderingContext2D, line: MarkdownVisualLine, x: number, y: number, maxWidth: number): void {
+function drawMarkdownImage(
+  ctx: CanvasRenderingContext2D,
+  line: MarkdownVisualLine,
+  x: number,
+  y: number,
+  maxWidth: number,
+): void {
   if (!line.imageSrc) return;
   let image = markdownImages.get(line.imageSrc);
   if (!image) {
     image = new Image();
-    image.onload = () => window.dispatchEvent(new Event("codestudio:image-loaded"));
-    image.onerror = () => window.dispatchEvent(new Event("codestudio:image-loaded"));
+    image.onload = () =>
+      window.dispatchEvent(new Event("codestudio:image-loaded"));
+    image.onerror = () =>
+      window.dispatchEvent(new Event("codestudio:image-loaded"));
     image.src = line.imageSrc;
     markdownImages.set(line.imageSrc, image);
   }
   if (image.complete && image.naturalWidth > 0) {
-    const scale = Math.min(maxWidth / image.naturalWidth, 150 / image.naturalHeight, 1);
-    ctx.drawImage(image, x, y, image.naturalWidth * scale, image.naturalHeight * scale);
+    const scale = Math.min(
+      maxWidth / image.naturalWidth,
+      150 / image.naturalHeight,
+      1,
+    );
+    ctx.drawImage(
+      image,
+      x,
+      y,
+      image.naturalWidth * scale,
+      image.naturalHeight * scale,
+    );
   } else {
     ctx.fillStyle = "#8b949e";
     ctx.font = "16px system-ui, sans-serif";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText("Loading image" + (line.imageAlt ? ": " + line.imageAlt : "…"), x, y + 8);
+    ctx.fillText(
+      "Loading image" + (line.imageAlt ? ": " + line.imageAlt : "…"),
+      x,
+      y + 8,
+    );
   }
 }
 
@@ -107,7 +134,9 @@ function drawTableLine(
   const colW = width / cells.length;
   cells.forEach((cell, index) => {
     const cellX = x + index * colW;
-    ctx.fillStyle = cell.header ? "rgba(56, 139, 253, 0.22)" : "rgba(22, 27, 34, 0.9)";
+    ctx.fillStyle = cell.header
+      ? "rgba(56, 139, 253, 0.22)"
+      : "rgba(22, 27, 34, 0.9)";
     ctx.fillRect(cellX, y - 4, colW - 6, lineHeight - 2);
     ctx.strokeStyle = "#30363d";
     ctx.lineWidth = 1;
@@ -138,18 +167,27 @@ export function drawMarkdownCell(
   const lineHeight = 40;
 
   const visualLines = parseMarkdownLines(visibleSource);
-  const wrapped = visualLines.flatMap((line) => wrapVisualLine(ctx, line, maxWidth));
+  const wrapped = visualLines.flatMap((line) =>
+    wrapVisualLine(ctx, line, maxWidth),
+  );
 
   const maxLines = 18;
   const firstVisibleLine = Math.max(0, wrapped.length - maxLines);
-  const shownLines = wrapped.slice(firstVisibleLine, firstVisibleLine + maxLines);
+  const shownLines = wrapped.slice(
+    firstVisibleLine,
+    firstVisibleLine + maxLines,
+  );
 
   shownLines.forEach((line, index) => {
     const y = top + index * lineHeight;
     const boxPad = line.box ? 18 : 0;
     drawCallout(ctx, line, left - 24, y, maxWidth + 48, lineHeight);
 
-    if (line.style === "image") {\n      drawMarkdownImage(ctx, line, left, y, maxWidth);\n      return;\n    }\n\n    if (line.style === "hr") {
+    if (line.style === "image") {
+      if (line.imageSrc) {
+        drawMarkdownImage(ctx, line, left, y, maxWidth);
+        return;
+      }
       ctx.strokeStyle = "#30363d";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -195,7 +233,10 @@ export function drawMarkdownCell(
 
   if (Math.floor(globalTime * 2) % 2 === 0 && shownLines.length > 0) {
     const last = shownLines[shownLines.length - 1];
-    const style = markdownStyle(last.style, { size: last.size, color: last.color });
+    const style = markdownStyle(last.style, {
+      size: last.size,
+      color: last.color,
+    });
     const boxPad = last.box ? 18 : 0;
     const cursorX = Math.min(
       last.style === "table"
@@ -203,8 +244,53 @@ export function drawMarkdownCell(
         : measureRichText(ctx, last.text, left + boxPad, style) + 3,
       w - 80,
     );
-    const cursorY = visualY - (last.style === "image" ? 170 : lineHeight);
-    ctx.fillStyle = "#e6edf3";
-    ctx.fillRect(cursorX, cursorY + 2, 3, (last.size || style.size) + 5);
+
+    if (Math.floor(globalTime * 2) % 2 === 0 && shownLines.length > 0) {
+      const lastIndex = shownLines.length - 1;
+      const last = shownLines[lastIndex];
+      const style = markdownStyle(last.style, {
+        size: last.size,
+        color: last.color,
+      });
+      const boxPad = last.box ? 18 : 0;
+
+      const cursorX = Math.min(
+        last.style === "table"
+          ? left + maxWidth
+          : measureRichText(ctx, last.text, left + boxPad, style) + 3,
+        w - 80,
+      );
+
+      const cursorY = top + lastIndex * lineHeight;
+
+      if (last.style !== "image") {
+        ctx.fillStyle = "#e6edf3";
+        ctx.fillRect(cursorX, cursorY + 2, 3, (last.size || style.size) + 5);
+      }
+    }
+
+    if (Math.floor(globalTime * 2) % 2 === 0 && shownLines.length > 0) {
+      const lastIndex = shownLines.length - 1;
+      const last = shownLines[lastIndex];
+      const style = markdownStyle(last.style, {
+        size: last.size,
+        color: last.color,
+      });
+      const boxPad = last.box ? 18 : 0;
+
+      const cursorX = Math.min(
+        last.style === "table"
+          ? left + maxWidth
+          : measureRichText(ctx, last.text, left + boxPad, style) + 3,
+        w - 80,
+      );
+
+      const cursorY = top + lastIndex * lineHeight;
+
+      if (last.style !== "image") {
+        ctx.fillStyle = "#e6edf3";
+        ctx.fillRect(cursorX, cursorY + 2, 3, (last.size || style.size) + 5);
+      }
+    }
   }
 }
