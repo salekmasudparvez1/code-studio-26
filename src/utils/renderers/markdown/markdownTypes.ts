@@ -6,7 +6,8 @@ export type MarkdownLineStyle =
   | "code"
   | "hr"
   | "math"
-  | "table";
+  | "table"
+  | "image";
 
 export interface CalloutBox {
   background: string;
@@ -28,6 +29,8 @@ export interface MarkdownVisualLine {
   headingLevel?: number;
   box?: CalloutBox;
   tableCells?: TableCell[];
+  imageSrc?: string;
+  imageAlt?: string;
 }
 
 export interface RichTextStyle {

@@ -95,6 +95,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [imageRevision, setImageRevision] = useState(0);
   // Single source of truth for "user manually hid the bar"
   const [controlsHidden, setControlsHidden] = useState(false);
   // Auto-hide in fullscreen+playing; toggled by mouse move
@@ -215,6 +216,12 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFullscreen, toggleFullscreen]);
 
+  useEffect(() => {
+    const refresh = () => setImageRevision((revision) => revision + 1);
+    window.addEventListener("codestudio:image-loaded", refresh);
+    return () => window.removeEventListener("codestudio:image-loaded", refresh);
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Render canvas
   // ---------------------------------------------------------------------------
@@ -240,6 +247,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     currentTime,
     fps,
     editingOverlayId,
+    imageRevision,
   ]);
 
   const handleToggleManualHidden = () => {

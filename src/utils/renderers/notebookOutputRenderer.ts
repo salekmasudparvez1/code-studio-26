@@ -28,6 +28,10 @@ export function drawNotebookOutput(
     let image = outputImages.get(output.imageDataUrl);
     if (!image) {
       image = new Image();
+      // Notify the canvas preview when an asynchronous image finishes loading.
+      // Without this, a paused preview can remain stuck on the loading placeholder.
+      image.onload = () => window.dispatchEvent(new Event("codestudio:image-loaded"));
+      image.onerror = () => window.dispatchEvent(new Event("codestudio:image-loaded"));
       image.src = output.imageDataUrl;
       outputImages.set(output.imageDataUrl, image);
     }

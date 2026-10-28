@@ -67,6 +67,21 @@ function classifyLine(
   const trimmed = rawLine.trim();
   if (!trimmed) return { text: "", style: "paragraph", box };
 
+  const mdImage = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+  const htmlImage = trimmed.match(/^<img\b([^>]*)\/?\s*>$/i);
+  if (mdImage) {
+    return { text: mdImage[1], style: "image", imageSrc: mdImage[2].trim().replace(/^<|>$/g, ""), imageAlt: mdImage[1], box };
+  }
+  if (htmlImage) {
+    const src = htmlImage[1].match(/\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const alt = htmlImage[1].match(/\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    if (src) {
+      const imageSrc = src[1] || src[2] || src[3];
+      const imageAlt = alt?.[1] || alt?.[2] || alt?.[3] || "";
+      return { text: imageAlt, style: "image", imageSrc, imageAlt, box };
+    }
+  }
+
   if (trimmed === "%%MATH%%" || trimmed.startsWith("%%MATH%%")) {
     const text = trimmed.replace(/^%%MATH%%/, "").replace(/%%ENDMATH%%$/, "");
     return { text, style: "math", box };
